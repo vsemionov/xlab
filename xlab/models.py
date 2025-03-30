@@ -97,8 +97,10 @@ class MultiHeadSelfAttention(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, max_len, d_model, n_heads, d_ff, causal=False, dropout=0.1, attn_drop=True, ff_drop=True):
+    def __init__(self, max_len, d_model, n_heads, d_ff, causal=False, prenorm=True,
+            dropout=0.1, attn_drop=True, ff_drop=True):
         super().__init__()
+        self.prenorm = prenorm
         self.mhsa = MultiHeadSelfAttention(max_len, d_model, n_heads, causal=causal, dropout=(dropout * attn_drop))
         self.dropout1 = nn.Dropout(dropout)
         self.norm1 = nn.LayerNorm(d_model)
@@ -107,28 +109,24 @@ class TransformerBlock(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
 
     def forward(self, x, pad_mask=None):
-        skip = x
-        x = self.mhsa(x, pad_mask=pad_mask)
-        x = self.dropout1(x)
-        x = x + skip
-        x = self.norm1(x)
+        if self.prenorm:
+            x = x + self.dropout1(self.mhsa(self.norm1(x), pad_mask=pad_mask))
+            x = x + self.dropout2(self.ff(self.norm2(x)))
 
-        skip = x
-        x = self.ff(x)
-        x = self.dropout2(x)
-        x = x + skip
-        x = self.norm2(x)
+        else:
+            x = self.norm1(x + self.dropout1(self.mhsa(x, pad_mask=pad_mask)))
+            x = self.norm2(x + self.dropout2(self.ff(x)))
 
         return x
 
 
 class Transformer(nn.Module):
-    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, causal=False, dropout=0.1,
-            attn_drop=True, ff_drop=True):
+    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, causal=False, prenorm=True,
+            dropout=0.1, attn_drop=True, ff_drop=True):
         super().__init__()
         self.pos_enc = PositionalEncoding(max_len, d_model)
         self.dropout = nn.Dropout(dropout)
-        kwargs = dict(causal=causal, dropout=dropout, attn_drop=attn_drop, ff_drop=ff_drop)
+        kwargs = dict(causal=causal, prenorm=prenorm, dropout=dropout, attn_drop=attn_drop, ff_drop=ff_drop)
         self.blocks = nn.ModuleList([TransformerBlock(max_len, d_model, n_heads, d_ff, **kwargs)
             for _ in range(n_blocks)])
 
