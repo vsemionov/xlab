@@ -154,8 +154,3 @@ class TextTransformer(nn.Module):
         x = self.transformer(x, pad_mask=pad_mask)
         y = self.linear(x)
         return y
-
-    def predict_probas(self, x):
-        scores = self(x)
-        probas = scores.softmax(2)
-        return probas
