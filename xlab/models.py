@@ -97,16 +97,16 @@ class MultiHeadSelfAttention(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, max_len, d_model, n_heads, d_ff, causal=False, prenorm=True,
+    def __init__(self, max_len, d_model, n_heads, d_ff, causal=False, prenorm=True, norm=nn.LayerNorm,
             dropout=0.1, attn_drop=True, ff_drop=True):
         super().__init__()
         self.prenorm = prenorm
         self.mhsa = MultiHeadSelfAttention(max_len, d_model, n_heads, causal=causal, dropout=(dropout * attn_drop))
         self.dropout1 = nn.Dropout(dropout)
-        self.norm1 = nn.LayerNorm(d_model)
+        self.norm1 = norm(d_model)
         self.ff = FeedForward(d_model, d_ff, dropout=(dropout * ff_drop))
         self.dropout2 = nn.Dropout(dropout)
-        self.norm2 = nn.LayerNorm(d_model)
+        self.norm2 = norm(d_model)
 
     def forward(self, x, pad_mask=None):
         if self.prenorm:
