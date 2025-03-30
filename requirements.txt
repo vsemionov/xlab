@@ -1,2 +1,4 @@
-torch
+datasets
 lightning
+torch
+tqdm
