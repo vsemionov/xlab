@@ -141,11 +141,11 @@ class Transformer(nn.Module):
 
 
 class TextTransformer(nn.Module):
-    def __init__(self, n_vocab, max_len, d_model, pad_index=None, *xf_args, **xf_kwargs):
+    def __init__(self, n_vocab, max_len, d_model, pad_index=None, *args, **kwargs):
         super().__init__()
         self.pad_index = pad_index
         self.embedding = nn.Embedding(n_vocab, d_model)
-        self.transformer = Transformer(max_len, d_model, *xf_args, **xf_kwargs)
+        self.transformer = Transformer(max_len, d_model, *args, **kwargs)
         self.linear = nn.Linear(d_model, n_vocab)
 
     def forward(self, x):
