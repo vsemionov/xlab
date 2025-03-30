@@ -121,13 +121,11 @@ class TransformerBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, causal=False, prenorm=True,
-            dropout=0.1, attn_drop=True, ff_drop=True):
+    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, dropout=0.1, **kwargs):
         super().__init__()
         self.pos_enc = PositionalEncoding(max_len, d_model)
         self.dropout = nn.Dropout(dropout)
-        kwargs = dict(causal=causal, prenorm=prenorm, dropout=dropout, attn_drop=attn_drop, ff_drop=ff_drop)
-        self.blocks = nn.ModuleList([TransformerBlock(max_len, d_model, n_heads, d_ff, **kwargs)
+        self.blocks = nn.ModuleList([TransformerBlock(max_len, d_model, n_heads, d_ff, dropout=dropout, **kwargs)
             for _ in range(n_blocks)])
 
     def forward(self, x, pad_mask=None):
@@ -139,11 +137,11 @@ class Transformer(nn.Module):
 
 
 class TextTransformer(nn.Module):
-    def __init__(self, n_vocab, max_len, d_model, pad_index=None, *args, **kwargs):
+    def __init__(self, n_vocab, max_len, d_model, pad_index=None, **kwargs):
         super().__init__()
         self.pad_index = pad_index
         self.embedding = nn.Embedding(n_vocab, d_model)
-        self.transformer = Transformer(max_len, d_model, *args, **kwargs)
+        self.transformer = Transformer(max_len, d_model, **kwargs)
         self.linear = nn.Linear(d_model, n_vocab)
 
     def forward(self, x):
