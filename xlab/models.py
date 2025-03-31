@@ -112,7 +112,14 @@ class TransformerBlock(nn.Module):
         return x
 
 
-class TransformerEncoder(nn.Module):
+class ParameterInit:
+    def reset_parameters(self: nn.Module):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+
+
+class TransformerEncoder(nn.Module, ParameterInit):
     def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, postnorm=True, norm=nn.LayerNorm,
             causal=False, **kwargs):
         super().__init__()
@@ -121,6 +128,7 @@ class TransformerEncoder(nn.Module):
         self.norm = norm(d_model) if postnorm else None
         causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1) if causal else None
         self.register_buffer('causal_mask', causal_mask, persistent=False)
+        self.reset_parameters()
 
     def forward(self, x, seq_mask=None):
         mask = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
@@ -147,7 +155,7 @@ class TransformerEncoder(nn.Module):
         return causal_mask | seq_mask
 
 
-class PyTorchEncoder(nn.Module):
+class PyTorchEncoder(nn.Module, ParameterInit):
     def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, prenorm=True, postnorm=True, norm=nn.LayerNorm,
             causal=False, dropout=0.1, **kwargs):
         super().__init__()
@@ -157,6 +165,7 @@ class PyTorchEncoder(nn.Module):
         self.encoder = nn.TransformerEncoder(encoder_layer, n_blocks, norm=encoder_norm)
         causal_mask = nn.Transformer.generate_square_subsequent_mask(max_len) if causal else None
         self.register_buffer('causal_mask', causal_mask)
+        self.reset_parameters()
 
     def forward(self, x, seq_mask=None):
         n = x.size(1)
