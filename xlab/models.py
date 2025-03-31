@@ -41,24 +41,18 @@ class FeedForward(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, max_len, d_model, n_heads, causal=False, dropout=0.1):
+    def __init__(self, d_model, n_heads, dropout=0.1):
         assert d_model % n_heads == 0
         super().__init__()
         self.n_heads = n_heads
         self.qkv_proj = nn.Linear(d_model, 3 * d_model)
         self.dropout = nn.Dropout(dropout)
         self.out_proj = nn.Linear(d_model, d_model)
-        causal_mask = None
-        if causal:
-            causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1)
-        self.register_buffer('causal_mask', causal_mask, persistent=False)
 
-    def forward(self, x, pad_mask=None):
+    def forward(self, x, mask=None):
         b, n, d = x.size()
         h = self.n_heads
         s = d // h
-
-        mask = self._merge_masks(self.causal_mask, pad_mask, n)  # bnn
 
         q, k, v = self.qkv_proj(x).split(d, dim=2)  # bnd
         q, k, v = [z.view(b, n, h, s).transpose(1, 2) for z in (q, k, v)]  # bhns
@@ -79,6 +73,49 @@ class MultiHeadSelfAttention(nn.Module):
 
         return y
 
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model, n_heads, d_ff, prenorm=True, norm=nn.LayerNorm,
+            dropout=0.1, attn_drop=True, ff_drop=True):
+        super().__init__()
+        self.prenorm = prenorm
+        self.mhsa = MultiHeadSelfAttention(d_model, n_heads, dropout=(dropout * attn_drop))
+        self.dropout1 = nn.Dropout(dropout)
+        self.norm1 = norm(d_model)
+        self.ff = FeedForward(d_model, d_ff, dropout=(dropout * ff_drop))
+        self.dropout2 = nn.Dropout(dropout)
+        self.norm2 = norm(d_model)
+
+    def forward(self, x, mask=None):
+        if self.prenorm:
+            x = x + self.dropout1(self.mhsa(self.norm1(x), mask=mask))
+            x = x + self.dropout2(self.ff(self.norm2(x)))
+
+        else:
+            x = self.norm1(x + self.dropout1(self.mhsa(x, mask=mask)))
+            x = self.norm2(x + self.dropout2(self.ff(x)))
+
+        return x
+
+
+class Transformer(nn.Module):
+    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, causal=False, dropout=0.1, **kwargs):
+        super().__init__()
+        self.pos_enc = PositionalEncoding(max_len, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.blocks = nn.ModuleList([TransformerBlock(d_model, n_heads, d_ff, dropout=dropout, **kwargs)
+            for _ in range(n_blocks)])
+        causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1) if causal else None
+        self.register_buffer('causal_mask', causal_mask, persistent=False)
+
+    def forward(self, x, pad_mask=None):
+        mask = self._merge_masks(self.causal_mask, pad_mask, x.size(1))  # bnn
+        x = x + self.pos_enc(x).unsqueeze(0)
+        x = self.dropout(x)
+        for block in self.blocks:
+            x = block(x, mask=mask)
+        return x
+
     @staticmethod
     def _merge_masks(causal_mask, pad_mask, seq_len):
         # causal_mask: NN
@@ -94,46 +131,6 @@ class MultiHeadSelfAttention(nn.Module):
             if causal_mask is None:
                 return pad_mask
         return causal_mask | pad_mask
-
-
-class TransformerBlock(nn.Module):
-    def __init__(self, max_len, d_model, n_heads, d_ff, causal=False, prenorm=True, norm=nn.LayerNorm,
-            dropout=0.1, attn_drop=True, ff_drop=True):
-        super().__init__()
-        self.prenorm = prenorm
-        self.mhsa = MultiHeadSelfAttention(max_len, d_model, n_heads, causal=causal, dropout=(dropout * attn_drop))
-        self.dropout1 = nn.Dropout(dropout)
-        self.norm1 = norm(d_model)
-        self.ff = FeedForward(d_model, d_ff, dropout=(dropout * ff_drop))
-        self.dropout2 = nn.Dropout(dropout)
-        self.norm2 = norm(d_model)
-
-    def forward(self, x, pad_mask=None):
-        if self.prenorm:
-            x = x + self.dropout1(self.mhsa(self.norm1(x), pad_mask=pad_mask))
-            x = x + self.dropout2(self.ff(self.norm2(x)))
-
-        else:
-            x = self.norm1(x + self.dropout1(self.mhsa(x, pad_mask=pad_mask)))
-            x = self.norm2(x + self.dropout2(self.ff(x)))
-
-        return x
-
-
-class Transformer(nn.Module):
-    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, dropout=0.1, **kwargs):
-        super().__init__()
-        self.pos_enc = PositionalEncoding(max_len, d_model)
-        self.dropout = nn.Dropout(dropout)
-        self.blocks = nn.ModuleList([TransformerBlock(max_len, d_model, n_heads, d_ff, dropout=dropout, **kwargs)
-            for _ in range(n_blocks)])
-
-    def forward(self, x, pad_mask=None):
-        x = x + self.pos_enc(x).unsqueeze(0)
-        x = self.dropout(x)
-        for block in self.blocks:
-            x = block(x, pad_mask=pad_mask)
-        return x
 
 
 class TextTransformer(nn.Module):
