@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2025 Victor Semionov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
