@@ -135,6 +135,7 @@ class Transformer(nn.Module):
 
 class TextTransformer(nn.Module):
     def __init__(self, n_vocab, max_len, d_model, pad_index=None, **kwargs):
+        assert pad_index is None or pad_index < 0
         super().__init__()
         self.pad_index = pad_index
         self.embedding = nn.Embedding(n_vocab, d_model)
