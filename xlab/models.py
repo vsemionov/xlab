@@ -108,8 +108,8 @@ class Transformer(nn.Module):
         causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1) if causal else None
         self.register_buffer('causal_mask', causal_mask, persistent=False)
 
-    def forward(self, x, pad_mask=None):
-        mask = self._merge_masks(self.causal_mask, pad_mask, x.size(1))  # bnn
+    def forward(self, x, seq_mask=None):
+        mask = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
         x = x + self.pos_enc(x).unsqueeze(0)
         x = self.dropout(x)
         for block in self.blocks:
@@ -117,20 +117,20 @@ class Transformer(nn.Module):
         return x
 
     @staticmethod
-    def _merge_masks(causal_mask, pad_mask, seq_len):
+    def _merge_masks(causal_mask, seq_mask, seq_len):
         # causal_mask: NN
-        # pad_mask: bn
-        if causal_mask is None and pad_mask is None:
+        # seq_mask: bn
+        if causal_mask is None and seq_mask is None:
             return None
         if causal_mask is not None:
             causal_mask = causal_mask[:seq_len, :seq_len].unsqueeze(0)  # 1nn
-            if pad_mask is None:
+            if seq_mask is None:
                 return causal_mask
-        if pad_mask is not None:
-            pad_mask = pad_mask.unsqueeze(1)  # b1n
+        if seq_mask is not None:
+            seq_mask = seq_mask.unsqueeze(1)  # b1n
             if causal_mask is None:
-                return pad_mask
-        return causal_mask | pad_mask
+                return seq_mask
+        return causal_mask | seq_mask
 
 
 class TextTransformer(nn.Module):
@@ -140,10 +140,11 @@ class TextTransformer(nn.Module):
         self.embedding = nn.Embedding(n_vocab, d_model)
         self.transformer = Transformer(max_len, d_model, **kwargs)
         self.linear = nn.Linear(d_model, n_vocab)
+        self.pad_mask = None
 
     def forward(self, x):
-        pad_mask = (x == self.pad_index) if self.pad_index is not None else None
+        self.pad_mask = (x == self.pad_index) if self.pad_index is not None else None
         x = self.embedding(x) * math.sqrt(self.embedding.embedding_dim)
-        x = self.transformer(x, pad_mask=pad_mask)
+        x = self.transformer(x, seq_mask=self.pad_mask)
         y = self.linear(x)
         return y
