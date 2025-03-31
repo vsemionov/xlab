@@ -191,11 +191,10 @@ class Transformer(nn.Module):
 
 
 class GenerativeTextTransformer(nn.Module):
-    def __init__(self, n_vocab, max_len, d_model, pad_index=None, **kwargs):
-        assert pad_index is None or pad_index < 0
+    def __init__(self, n_vocab, max_len, d_model, pad_index=None, pad_mask=True, **kwargs):
         super().__init__()
-        self.pad_index = pad_index
-        self.embedding = nn.Embedding(n_vocab, d_model)
+        self.pad_index = pad_index if pad_mask else None
+        self.embedding = nn.Embedding(n_vocab, d_model, padding_idx=pad_index)
         self.transformer = Transformer(max_len=max_len, d_model=d_model, causal=True, **kwargs)
         self.linear = nn.Linear(d_model, n_vocab)
 
