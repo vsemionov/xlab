@@ -31,7 +31,7 @@ class XLabTransformer(L.LightningModule):
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = True, postnorm: bool = True, norm: type[nn.Module] = nn.LayerNorm,
             activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
-            attn_drop: bool = True, ff_drop: bool = True
+            attn_drop: bool = True, ff_drop: bool = True,
     ):
         super().__init__()
         self.model = models.GenerativeTextTransformer(
