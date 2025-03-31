@@ -24,8 +24,7 @@ from . import models
 
 
 class XLabTransformer(L.LightningModule):
-    def __init__(
-            self,
+    def __init__(self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             pos_enc: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.TransformerEncoder,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
@@ -39,7 +38,8 @@ class XLabTransformer(L.LightningModule):
             pos_enc=pos_enc, encoder=encoder,
             n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
-            activation=activation, attn_drop=attn_drop, ff_drop=ff_drop,
+            activation=activation,
+            attn_drop=attn_drop, ff_drop=ff_drop,
         )
 
     def forward(self, x):
@@ -75,3 +75,21 @@ class XLabTransformer(L.LightningModule):
         x, _ = batch
         y = self(x)
         return y
+
+
+class XLabPyTorchTransformer(XLabTransformer):
+    def __init__(self,
+            n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
+            pos_enc: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.PyTorchEncoder,
+            n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
+            prenorm: bool = True, postnorm: bool = True, norm: type[nn.Module] = nn.LayerNorm,
+            activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
+    ):
+        super(XLabTransformer, self).__init__()  # super-super
+        self.model = models.GenerativeTextTransformer(
+            n_vocab, max_len, d_model, pad_index=pad_index,
+            pos_enc=pos_enc, encoder=encoder,
+            n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
+            prenorm=prenorm, postnorm=postnorm, norm=norm,
+            activation=activation,
+        )
