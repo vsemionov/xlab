@@ -27,11 +27,11 @@ class PositionalEncoding(nn.Module):
 
 
 class FeedForward(nn.Module):
-    def __init__(self, d_model, d_ff, dropout=0.1):
+    def __init__(self, d_model, d_ff, activation, dropout=0.1):
         super().__init__()
         self.seq = nn.Sequential(
             nn.Linear(d_model, d_ff),
-            nn.ReLU(),
+            activation(),
             nn.Dropout(dropout),
             nn.Linear(d_ff, d_model)
         )
@@ -75,14 +75,14 @@ class MultiHeadSelfAttention(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, d_model, n_heads, d_ff, prenorm=True, norm=nn.LayerNorm,
+    def __init__(self, d_model, n_heads, d_ff, prenorm=True, norm=nn.LayerNorm, activation=nn.ReLU,
             dropout=0.1, attn_drop=True, ff_drop=True):
         super().__init__()
         self.prenorm = prenorm
         self.mhsa = MultiHeadSelfAttention(d_model, n_heads, dropout=(dropout * attn_drop))
         self.dropout1 = nn.Dropout(dropout)
         self.norm1 = norm(d_model)
-        self.ff = FeedForward(d_model, d_ff, dropout=(dropout * ff_drop))
+        self.ff = FeedForward(d_model, d_ff, activation=activation, dropout=(dropout * ff_drop))
         self.dropout2 = nn.Dropout(dropout)
         self.norm2 = norm(d_model)
 
