@@ -28,15 +28,16 @@ class XLabModule(L.LightningModule, ABC):
     model: models.GenerativeTextTransformer
 
     @abstractmethod
-    def __init__(self):
+    def __init__(self, pad_index: Optional[int]):
         super().__init__()
+        self.pad_index = pad_index
 
     def forward(self, x):
         return self.model(x)
 
-    @staticmethod
-    def loss(logits, targets):
-        return F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+    def loss(self, logits, targets):
+        ignore_index = self.pad_index if self.pad_index is not None else -1
+        return F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=ignore_index)
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=3e-4)
@@ -75,9 +76,9 @@ class XLabTransformer(XLabModule):
             activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
             attn_drop: bool = True, ff_drop: bool = True,
     ):
-        super().__init__()
+        super().__init__(pad_index)
         self.model = models.GenerativeTextTransformer(
-            n_vocab, max_len, d_model, pad_index=pad_index,
+            n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
             pos_enc=pos_enc, encoder=encoder,
             n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
@@ -94,9 +95,9 @@ class XLabPyTorch(XLabModule):
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
     ):
-        super().__init__()
+        super().__init__(pad_index)
         self.model = models.GenerativeTextTransformer(
-            n_vocab, max_len, d_model, pad_index=pad_index,
+            n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
             pos_enc=pos_enc, encoder=encoder,
             n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
