@@ -89,7 +89,7 @@ class MultiHeadSelfAttention(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, d_model, n_heads, d_ff, prenorm=True, norm=nn.LayerNorm, activation=nn.ReLU(),
+    def __init__(self, d_model, n_heads, d_ff, prenorm=False, norm=nn.LayerNorm, activation=nn.ReLU(),
             dropout=0.1, attn_drop=True, ff_drop=True):
         super().__init__()
         self.prenorm = prenorm
@@ -120,7 +120,7 @@ class ParameterInit:
 
 
 class TransformerEncoder(nn.Module, ParameterInit):
-    def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, postnorm=True, norm=nn.LayerNorm,
+    def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, postnorm=False, norm=nn.LayerNorm,
             causal=False, **kwargs):
         super().__init__()
         self.blocks = nn.ModuleList([TransformerBlock(d_model, n_heads, d_ff, norm=norm, **kwargs)
@@ -156,7 +156,7 @@ class TransformerEncoder(nn.Module, ParameterInit):
 
 
 class PyTorchEncoder(nn.Module, ParameterInit):
-    def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, prenorm=True, postnorm=True, norm=nn.LayerNorm,
+    def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, prenorm=False, postnorm=False, norm=nn.LayerNorm,
             causal=False, dropout=0.1, **kwargs):
         super().__init__()
         kwargs = dict(dropout=dropout, norm_first=prenorm, batch_first=True, **kwargs)

@@ -71,7 +71,7 @@ class XLabTransformer(XLabModule):
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             pos_enc: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.TransformerEncoder,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
-            prenorm: bool = True, postnorm: bool = True, norm: type[nn.Module] = nn.LayerNorm,
+            prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
             attn_drop: bool = True, ff_drop: bool = True,
     ):
@@ -91,7 +91,7 @@ class XLabPyTorch(XLabModule):
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             pos_enc: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.PyTorchEncoder,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
-            prenorm: bool = True, postnorm: bool = True, norm: type[nn.Module] = nn.LayerNorm,
+            prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
     ):
         super().__init__()
