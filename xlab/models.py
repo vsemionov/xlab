@@ -99,12 +99,14 @@ class TransformerBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, causal=False, dropout=0.1, **kwargs):
+    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, postnorm=True, norm=nn.LayerNorm,
+            causal=False, dropout=0.1, **kwargs):
         super().__init__()
         self.pos_enc = PositionalEncoding(max_len, d_model)
         self.dropout = nn.Dropout(dropout)
-        self.blocks = nn.ModuleList([TransformerBlock(d_model, n_heads, d_ff, dropout=dropout, **kwargs)
+        self.blocks = nn.ModuleList([TransformerBlock(d_model, n_heads, d_ff, norm=norm, dropout=dropout, **kwargs)
             for _ in range(n_blocks)])
+        self.norm = norm(d_model) if postnorm else None
         causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1) if causal else None
         self.register_buffer('causal_mask', causal_mask, persistent=False)
 
@@ -114,6 +116,8 @@ class Transformer(nn.Module):
         x = self.dropout(x)
         for block in self.blocks:
             x = block(x, mask=mask)
+        if self.norm:
+            x = self.norm(x)
         return x
 
     @staticmethod
