@@ -112,13 +112,11 @@ class TransformerBlock(nn.Module):
         return x
 
 
-class Transformer(nn.Module):
-    def __init__(self, max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, postnorm=True, norm=nn.LayerNorm,
-            causal=False, dropout=0.1, **kwargs):
+class TransformerEncoder(nn.Module):
+    def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, postnorm=True, norm=nn.LayerNorm,
+            causal=False, **kwargs):
         super().__init__()
-        self.pos_enc = PositionalEncoding(max_len, d_model)
-        self.dropout = nn.Dropout(dropout)
-        self.blocks = nn.ModuleList([TransformerBlock(d_model, n_heads, d_ff, norm=norm, dropout=dropout, **kwargs)
+        self.blocks = nn.ModuleList([TransformerBlock(d_model, n_heads, d_ff, norm=norm, **kwargs)
             for _ in range(n_blocks)])
         self.norm = norm(d_model) if postnorm else None
         causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1) if causal else None
@@ -126,8 +124,6 @@ class Transformer(nn.Module):
 
     def forward(self, x, seq_mask=None):
         mask = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
-        x = x + self.pos_enc(x).unsqueeze(0)
-        x = self.dropout(x)
         for block in self.blocks:
             x = block(x, mask=mask)
         if self.norm:
@@ -151,13 +147,28 @@ class Transformer(nn.Module):
         return causal_mask | seq_mask
 
 
+class Transformer(nn.Module):
+    def __init__(self, pos_enc=PositionalEncoding, encoder=TransformerEncoder,
+            max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, dropout=0.1, **kwargs):
+        super().__init__()
+        self.pos_enc = pos_enc(max_len, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.encoder = encoder(max_len, d_model, n_blocks, n_heads, d_ff, dropout=dropout, **kwargs)
+
+    def forward(self, x, seq_mask=None):
+        x = x + self.pos_enc(x).unsqueeze(0)
+        x = self.dropout(x)
+        x = self.encoder(x, seq_mask=seq_mask)
+        return x
+
+
 class GenerativeTextTransformer(nn.Module):
     def __init__(self, n_vocab, max_len, d_model, pad_index=None, **kwargs):
         assert pad_index is None or pad_index < 0
         super().__init__()
         self.pad_index = pad_index
         self.embedding = nn.Embedding(n_vocab, d_model)
-        self.transformer = Transformer(max_len, d_model, causal=True, **kwargs)
+        self.transformer = Transformer(max_len=max_len, d_model=d_model, causal=True, **kwargs)
         self.linear = nn.Linear(d_model, n_vocab)
 
     def forward(self, x):
