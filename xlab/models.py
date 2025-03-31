@@ -137,19 +137,18 @@ class Transformer(nn.Module):
         return causal_mask | seq_mask
 
 
-class TextTransformer(nn.Module):
+class GenerativeTextTransformer(nn.Module):
     def __init__(self, n_vocab, max_len, d_model, pad_index=None, **kwargs):
         assert pad_index is None or pad_index < 0
         super().__init__()
         self.pad_index = pad_index
         self.embedding = nn.Embedding(n_vocab, d_model)
-        self.transformer = Transformer(max_len, d_model, **kwargs)
+        self.transformer = Transformer(max_len, d_model, causal=True, **kwargs)
         self.linear = nn.Linear(d_model, n_vocab)
-        self.pad_mask = None
 
     def forward(self, x):
-        self.pad_mask = (x == self.pad_index) if self.pad_index is not None else None
+        pad_mask = (x == self.pad_index) if self.pad_index is not None else None
         x = self.embedding(x) * math.sqrt(self.embedding.embedding_dim)
-        x = self.transformer(x, seq_mask=self.pad_mask)
+        x = self.transformer(x, seq_mask=pad_mask)
         y = self.linear(x)
         return y
