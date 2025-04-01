@@ -167,7 +167,7 @@ class TransformerEncoder(nn.Module, ParameterInit):
         return causal_mask | seq_mask
 
 
-class PyTorchEncoder(nn.Module, ParameterInit):
+class PyTorchTransformerEncoder(nn.Module, ParameterInit):
     def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, prenorm=False, postnorm=False, norm=nn.LayerNorm,
             causal=False, dropout=0.1, **kwargs):
         super().__init__()
