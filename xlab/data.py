@@ -151,32 +151,37 @@ class XLabDataset(L.LightningDataModule):
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
         self.datasets = {}
-        self._td_init = partial(
-            TextDataset,
-            path=self.path, name=self.name,
-            tokenizer=self.tokenizer, max_tokens=self.max_tokens,
-            splits=self.splits,
-            num_proc=self.num_workers,
-        )
         self._cache_dir = platformdirs.user_cache_path(config.APP_NAME, ensure_exists=True)
 
+    def _text_dataset(self, split, **kwargs):
+        return TextDataset(
+            path=self.path, name=self.name,
+            tokenizer=self.tokenizer, max_tokens=self.max_tokens,
+            splits=self.splits, split=split,
+            num_proc=self.num_workers,
+            **kwargs
+        )
+
+    def _dataset(self, split, **kwargs):
+        text_dataset = self._text_dataset(split, **kwargs)
+        return ChunkDataset(text_dataset, seq_len=self.seq_len)
+
     def prepare_data(self):
-        token_dataset = self._td_init(split='train')
-        torch.save(token_dataset.vocab, self._cache_dir / 'vocab.pt')
+        text_dataset = self._text_dataset('train')
+        torch.save(text_dataset.vocab, self._cache_dir / 'vocab.pt')
 
     def setup(self, stage):
         vocab = torch.load(self._cache_dir / 'vocab.pt')
-        td_init = partial(self._td_init, vocab=vocab, quiet=True)
-        dataset_init = partial(ChunkDataset, seq_len=self.seq_len)
+        kwargs = dict(vocab=vocab, quiet=True)
         if stage == 'fit':
-            self.datasets['train'] = dataset_init(td_init(split='train'))
-            self.datasets['val'] = dataset_init(td_init(split='val'))
+            self.datasets['train'] = self._dataset('train', **kwargs)
+            self.datasets['val'] = self._dataset('val', **kwargs)
         elif stage == 'validate':
-            self.datasets['val'] = dataset_init(td_init(split='val'))
+            self.datasets['val'] = self._dataset('val', **kwargs)
         elif stage == 'test':
-            self.datasets['test'] = dataset_init(td_init(split='test'))
+            self.datasets['test'] = self._dataset('test', **kwargs)
         elif stage == 'predict':
-            self.datasets['predict'] = dataset_init(td_init(split='predict'))
+            self.datasets['predict'] = self._dataset('predict', **kwargs)
         else:
             assert False
 
