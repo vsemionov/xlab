@@ -76,7 +76,7 @@ class TextDataset(data.Dataset):
 
     def _index(self, dataset, tokenizer):
         def index(row):
-            row['indices'] = np.array(tokenizer.index(row['tokens']))
+            row['indices'] = tokenizer.index(row['tokens'])
             return row
         dataset = dataset.map(index, remove_columns=['tokens'], num_proc=self.num_proc, desc='Indexing')
         return dataset
