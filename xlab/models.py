@@ -49,7 +49,7 @@ class XLabModule(L.LightningModule, ABC):
         loss = self.loss(logits, targets)
         correct = (logits.detach().argmax(dim=2) == targets).sum().item()
         accuracy = correct / targets.numel()
-        self.log_dict({f'{name}_loss': loss, f'{name}_accuracy': accuracy, **metrics}, prog_bar=True)
+        self.log_dict({f'{name}_loss': loss, f'{name}_acc': accuracy, **metrics}, prog_bar=True)
         return loss
 
     def training_step(self, batch, batch_idx):
