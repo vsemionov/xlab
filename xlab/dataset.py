@@ -12,44 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Callable
+from typing import Optional
 import warnings
 
 import numpy as np
 import torch
 import torch.utils.data as data
 import lightning as L
-import torchtext
 import datasets
 import platformdirs
 from tqdm.auto import tqdm
 
 from . import config
+from .tokenizer import Tokenizer
 
 
 class TextDataset(data.Dataset):
-    pad_token = '<pad>'
-    sos_token = '<sos>'
-    eos_token = '<eos>'
-    unk_token = '<unk>'
-    specials = [pad_token, sos_token, eos_token, unk_token]
-
     def __init__(
             self,
             path: str, name: Optional[str],
-            tokenizer: Callable[[str], list[str]], max_tokens: int,
             splits: dict[str, float], split: str,
-            vocab: Optional[torchtext.vocab.Vocab] = None,
+            tokenizer: Tokenizer,
             num_proc: int = 4, quiet: bool = False,
     ):
         super().__init__()
-        self.num_proc = num_proc
         self.quiet = quiet
+        self.num_proc = num_proc
+        self.tokenizer = tokenizer
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits)
         splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
-        self.vocab = self._build_vocab(splits['train'], max_tokens) if vocab is None else vocab
-        splits = {name: self._index(split, self.vocab) for name, split in splits.items()}
+        if not tokenizer.has_vocab():
+            self._build_vocab(splits['train'], tokenizer)
+        splits = {name: self._index(split, tokenizer) for name, split in splits.items()}
         self.dataset = splits[split]
 
     def _split(self, dataset, splits):
@@ -73,15 +68,13 @@ class TextDataset(data.Dataset):
         dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=self.num_proc, desc='Tokenizing')
         return dataset
 
-    def _build_vocab(self, dataset, max_tokens):
-        iterator = (sample['tokens'] for sample in tqdm(dataset, desc='Building vocabulary'))
-        vocab = torchtext.vocab.build_vocab_from_iterator(iterator, specials=self.specials, max_tokens=max_tokens)
-        vocab.set_default_index(vocab(self.unk_token))
-        return vocab
+    def _build_vocab(self, dataset, tokenizer):
+        batches = (sample['tokens'] for sample in tqdm(dataset, desc='Building vocabulary'))
+        tokenizer.build_vocab(batches)
 
-    def _index(self, dataset, vocab):
+    def _index(self, dataset, tokenizer):
         def index(row):
-            row['indices'] = np.array(vocab.lookup_indices(row['tokens']))
+            row['indices'] = np.array(tokenizer.index(row['tokens']))
             return row
         dataset = dataset.map(index, remove_columns=['tokens'], num_proc=self.num_proc, desc='Indexing')
         return dataset
@@ -111,6 +104,7 @@ class ChunkDataset(data.Dataset):
 
     def __getitem__(self, idx):
         dataset = self.dataset
+        tokenizer = dataset.tokenizer
         window = self.seq_len + 1
         ds_idx, start_idx = self.index[idx]
         end_idx = start_idx + window
@@ -119,12 +113,12 @@ class ChunkDataset(data.Dataset):
             start_idx -= 1
             end_idx -= 1
         else:
-            sos_index = dataset.vocab[dataset.sos_token]
+            sos_index = tokenizer[tokenizer.sos_token]
             indices = np.concatenate([[sos_index], indices[:window - 1]])
         if len(indices) < end_idx:
-            eos_index = dataset.vocab[dataset.eos_token]
-            pad_index = dataset.vocab[dataset.pad_token]
-            padding_size = max(end_idx - len(indices) - 1, 0)
+            eos_index = tokenizer[tokenizer.eos_token]
+            pad_index = tokenizer[tokenizer.pad_token]
+            padding_size = end_idx - len(indices)
             padding = np.array([pad_index]).repeat(padding_size)
             indices = np.concatenate([indices, [eos_index], padding])
         indices = indices[start_idx:end_idx]
@@ -137,17 +131,16 @@ class XLabDataset(L.LightningDataModule):
     def __init__(
             self,
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
-            tokenizer: str = 'basic_english', max_tokens: int = 20_000,
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
+            tokenizer: str = 'basic_english', language: str = 'en', max_tokens: int = 10_000,
             seq_len: int = 128,
             batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = True,
     ):
         super().__init__()
         self.path = path
         self.name = name
-        self.tokenizer = torchtext.data.utils.get_tokenizer(tokenizer)
-        self.max_tokens = max_tokens
         self.splits = splits
+        self.tokenizer = Tokenizer(tokenizer, language=language, max_tokens=max_tokens)
         self.seq_len = seq_len
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -158,7 +151,7 @@ class XLabDataset(L.LightningDataModule):
     def _text_dataset(self, split, **kwargs):
         return TextDataset(
             path=self.path, name=self.name,
-            tokenizer=self.tokenizer, max_tokens=self.max_tokens,
+            tokenizer=self.tokenizer,
             splits=self.splits, split=split,
             num_proc=self.num_workers,
             **kwargs
@@ -169,12 +162,12 @@ class XLabDataset(L.LightningDataModule):
         return ChunkDataset(text_dataset, seq_len=self.seq_len)
 
     def prepare_data(self):
-        text_dataset = self._text_dataset('train')
-        torch.save(text_dataset.vocab, self._cache_dir / 'vocab.pt')
+        self._text_dataset('train')
+        self.tokenizer.save_vocab(self._cache_dir / 'vocab.pt')
 
     def setup(self, stage):
-        vocab = torch.load(self._cache_dir / 'vocab.pt')
-        kwargs = dict(vocab=vocab, quiet=True)
+        self.tokenizer.load_vocab(self._cache_dir / 'vocab.pt')
+        kwargs = dict(quiet=True)
         if stage == 'fit':
             self.datasets['train'] = self._dataset('train', **kwargs)
             self.datasets['val'] = self._dataset('val', **kwargs)
