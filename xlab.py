@@ -26,6 +26,8 @@ class XLabCLI(LightningCLI):
     def add_arguments_to_parser(self, parser):
         parser.link_arguments('data.max_tokens', 'model.n_vocab')
         parser.link_arguments('model.max_len', 'data.seq_len')
+        parser.link_arguments('data.tokenizer', 'model.pad_index',
+            lambda tokenizer: tokenizer.specials.index(tokenizer.pad_token), apply_on='instantiate')
 
 
 def main():
