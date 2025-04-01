@@ -47,8 +47,8 @@ class TextDataset(data.Dataset):
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits)
         splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
-        self.vocab = self._index(splits['train'], max_tokens) if vocab is None else vocab
-        splits = {name: self._encode(split, self.vocab) for name, split in splits.items()}
+        self.vocab = self._build_vocab(splits['train'], max_tokens) if vocab is None else vocab
+        splits = {name: self._index(split, self.vocab) for name, split in splits.items()}
         self.dataset = splits[split]
 
     def _split(self, dataset, splits):
@@ -72,17 +72,17 @@ class TextDataset(data.Dataset):
         dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=self.num_proc, desc='Tokenizing')
         return dataset
 
-    def _index(self, dataset, max_tokens):
-        iterator = (sample['tokens'] for sample in tqdm(dataset, desc='Indexing'))
+    def _build_vocab(self, dataset, max_tokens):
+        iterator = (sample['tokens'] for sample in tqdm(dataset, desc='Building vocabulary'))
         vocab = torchtext.vocab.build_vocab_from_iterator(iterator, specials=self.specials, max_tokens=max_tokens)
         vocab.set_default_index(vocab(self.unk_token))
         return vocab
 
-    def _encode(self, dataset, vocab):
-        def encode(row):
+    def _index(self, dataset, vocab):
+        def index(row):
             row['indices'] = np.array(vocab.lookup_indices(row['tokens']))
             return row
-        dataset = dataset.map(encode, remove_columns=['tokens'], num_proc=self.num_proc, desc='Encoding')
+        dataset = dataset.map(index, remove_columns=['tokens'], num_proc=self.num_proc, desc='Indexing')
         return dataset
 
     def __len__(self):
