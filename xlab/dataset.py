@@ -46,7 +46,7 @@ class TextDataset(data.Dataset):
         if not tokenizer.has_vocab():
             self._build_vocab(splits['train'], tokenizer)
         splits = {name: self._index(split, tokenizer) for name, split in splits.items()}
-        self.dataset = splits[split]
+        self.dataset = splits[split].with_format('numpy', columns=['indices'], output_all_columns=True)
 
     def _split(self, dataset, splits):
         if isinstance(dataset, (datasets.DatasetDict, datasets.IterableDatasetDict)):
