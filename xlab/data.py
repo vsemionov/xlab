@@ -42,8 +42,8 @@ class TokenDataset(data.Dataset):
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         dataset = self._tokenize(dataset, self.tokenizer)
         splits = self._split(dataset, splits)
-        self.vocab = self._vocab(splits['train'], max_tokens)
-        self.dataset = self._convert(splits[split], self.vocab)
+        self.vocab = self._index(splits['train'], max_tokens)
+        self.dataset = self._vectorize(splits[split], self.vocab)
 
     def _tokenize(self, dataset, tokenizer):
         def tokenize(row):
@@ -65,17 +65,17 @@ class TokenDataset(data.Dataset):
             warnings.warn(f'{len(dataset)} unsplit samples out of {total} total')
         return results
 
-    def _vocab(self, dataset, max_tokens):
-        iterator = (sample['tokens'] for sample in tqdm(dataset, desc='Vocabulary'))
+    def _index(self, dataset, max_tokens):
+        iterator = (sample['tokens'] for sample in tqdm(dataset, desc='Indexing'))
         vocab = torchtext.vocab.build_vocab_from_iterator(iterator, specials=self.specials, max_tokens=max_tokens)
         vocab.set_default_index(self.specials.index('<unk>'))
         return vocab
 
-    def _convert(self, dataset, vocab):
-        def convert(row):
+    def _vectorize(self, dataset, vocab):
+        def vectorize(row):
             row['indices'] = np.array(vocab.lookup_indices(row['tokens']))
             return row
-        dataset = dataset.map(convert, remove_columns=['tokens'], num_proc=os.cpu_count(), desc='Converting')
+        dataset = dataset.map(vectorize, remove_columns=['tokens'], num_proc=os.cpu_count(), desc='Vectorizing')
         return dataset
 
     def __len__(self):
@@ -89,11 +89,11 @@ class SequenceDataset(data.Dataset):
     def __init__(self, dataset: TokenDataset, seq_len: int):
         self.dataset = dataset
         self.seq_len = seq_len
-        self.index = self._index(dataset)
+        self.index = self._chunk(dataset)
 
-    def _index(self, dataset):
+    def _chunk(self, dataset):
         index = []
-        for i, indices in enumerate(tqdm(dataset, desc='Indexing')):
+        for i, indices in enumerate(tqdm(dataset, desc='Chunking')):
             n_samples = len(indices) + 1  # account for <sos>
             index.extend([(i, j) for j in range(n_samples)])
         return index
