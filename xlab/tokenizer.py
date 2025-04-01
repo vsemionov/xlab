@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from typing import Optional, Union, Iterable
+import warnings
 
 import torch
 from torchtext.data.utils import get_tokenizer
@@ -54,6 +55,11 @@ class Tokenizer:
     def build_vocab(self, batches: Iterable[list[str]]) -> 'Tokenizer':
         self.vocab = build_vocab_from_iterator(batches, specials=self.specials, max_tokens=self.max_tokens)
         self.vocab.set_default_index(self.vocab[self.unk_token])
+        if len(self.vocab) < self.max_tokens:
+            warnings.warn(
+                f'Built vocabulary has size {len(self.vocab)}, which is less than the maximum {self.max_tokens}. '
+                f'Model dimensions are linked to the maximum size, which is incorrect.'
+            )
         return self
 
     def load_vocab(self, path: Union[str, Path]) -> 'Tokenizer':

@@ -18,13 +18,19 @@ import multiprocessing
 
 from lightning.pytorch.cli import LightningCLI
 
-from xlab import dataset
-from xlab import models
+from xlab.dataset import XLabDataModule
+from xlab.models import XLabModel
+
+
+class XLabCLI(LightningCLI):
+    def add_arguments_to_parser(self, parser):
+        parser.link_arguments('data.max_tokens', 'model.n_vocab')
+        parser.link_arguments('model.max_len', 'data.seq_len')
 
 
 def main():
     multiprocessing.set_start_method('fork')  # needed on macos
-    LightningCLI(model_class=models.XLabModel, datamodule_class=dataset.XLabDataModule)
+    XLabCLI(XLabModel, XLabDataModule)
 
 if __name__ == '__main__':
     main()
