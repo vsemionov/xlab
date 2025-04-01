@@ -23,7 +23,10 @@ import torch.utils.data as data
 import lightning as L
 import torchtext
 import datasets
+import platformdirs
 from tqdm.auto import tqdm
+
+from . import config
 
 
 class TokenDataset(data.Dataset):
@@ -38,8 +41,10 @@ class TokenDataset(data.Dataset):
             tokenizer: str, max_tokens: int,
             splits: dict[str, float], split: str,
             vocab: Optional[torchtext.vocab.Vocab] = None,
+            quiet: bool = False,
     ):
         super().__init__()
+        self.quiet = quiet
         self.tokenizer = torchtext.data.utils.get_tokenizer(tokenizer)
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         dataset = self._tokenize(dataset, self.tokenizer)
@@ -62,7 +67,8 @@ class TokenDataset(data.Dataset):
         for name, size in splits.items():
             split, dataset = dataset.train_test_split(train_size=int(size * total), seed=0).values()
             results[name] = split
-        print(f'Splits: { {name: len(split) for name, split in results.items() } }')
+        if not self.quiet:
+            print(f'Splits: { {name: len(split) for name, split in results.items() } }')
         if len(dataset) > 0:
             warnings.warn(f'{len(dataset)} unsplit samples out of {total} total')
         return results
@@ -145,35 +151,38 @@ class XLabDataset(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
-        self._datasets = {}
-        self._inner_init = partial(
+        self.datasets = {}
+        self._td_init = partial(
             TokenDataset,
             path=self.path, name=self.name,
             tokenizer=self.tokenizer, max_tokens=self.max_tokens,
             splits=self.splits,
         )
+        self._cache_dir = platformdirs.user_cache_path(config.APP_NAME, ensure_exists=True)
 
     def prepare_data(self):
-        self._inner_init(split='train')
+        token_dataset = self._td_init(split='train')
+        torch.save(token_dataset.vocab, self._cache_dir / 'vocab.pt')
 
     def setup(self, stage):
+        vocab = torch.load(self._cache_dir / 'vocab.pt')
+        td_init = partial(self._td_init, vocab=vocab, quiet=True)
         dataset_init = partial(SequenceDataset, seq_len=self.seq_len)
         if stage == 'fit':
-            self._datasets['train'] = dataset_init(self._inner_init(split='train'))
-            self._datasets['val'] = dataset_init(
-                self._inner_init(split='val', vocab=self._datasets['train'].dataset.vocab))
+            self.datasets['train'] = dataset_init(td_init(split='train'))
+            self.datasets['val'] = dataset_init(td_init(split='val'))
         elif stage == 'validate':
-            self._datasets['val'] = dataset_init(self._inner_init(split='val'))
+            self.datasets['val'] = dataset_init(td_init(split='val'))
         elif stage == 'test':
-            self._datasets['test'] = dataset_init(self._inner_init(split='test'))
+            self.datasets['test'] = dataset_init(td_init(split='test'))
         elif stage == 'predict':
-            self._datasets['predict'] = dataset_init(self._inner_init(split='predict'))
+            self.datasets['predict'] = dataset_init(td_init(split='predict'))
         else:
             assert False
 
     def train_dataloader(self):
         return data.DataLoader(
-            self._datasets['train'],
+            self.datasets['train'],
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=True,
@@ -183,7 +192,7 @@ class XLabDataset(L.LightningDataModule):
 
     def val_dataloader(self):
         return data.DataLoader(
-            self._datasets['val'],
+            self.datasets['val'],
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers,
@@ -191,14 +200,14 @@ class XLabDataset(L.LightningDataModule):
 
     def test_dataloader(self):
         return data.DataLoader(
-            self._datasets['test'],
+            self.datasets['test'],
             batch_size=self.batch_size,
             num_workers=self.num_workers,
         )
 
     def predict_dataloader(self):
         return data.DataLoader(
-            self._datasets['predict'],
+            self.datasets['predict'],
             batch_size=self.batch_size,
             num_workers=self.num_workers,
         )
