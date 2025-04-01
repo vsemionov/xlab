@@ -13,9 +13,8 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Optional, Callable
+from typing import Optional
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -68,13 +67,14 @@ class XLabModule(L.LightningModule, ABC):
 
 
 class XLabModel(XLabModule):
+    """XLab model"""
     def __init__(
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = transformers.PositionalEncoding,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
-            activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
+            activation: nn.Module = nn.ReLU(),
             attn_drop: bool = True, ff_drop: bool = True,
     ):
         super().__init__(pad_index)
@@ -89,13 +89,14 @@ class XLabModel(XLabModule):
 
 
 class XLabPyTorchModel(XLabModule):
+    """XLab PyTorch model"""
     def __init__(
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = transformers.PositionalEncoding,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
-            activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
+            activation: nn.Module = nn.ReLU(),
     ):
         super().__init__(pad_index)
         self.model = transformers.GenerativeTextTransformer(

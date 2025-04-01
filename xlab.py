@@ -14,3 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import multiprocessing
+
+from lightning.pytorch.cli import LightningCLI
+
+from xlab import dataset
+from xlab import models
+
+
+def main():
+    multiprocessing.set_start_method('fork')  # needed on macos
+    LightningCLI(model_class=models.XLabModel, datamodule_class=dataset.XLabDataModule)
+
+if __name__ == '__main__':
+    main()

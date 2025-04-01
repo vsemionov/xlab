@@ -56,7 +56,7 @@ class TextDataset(data.Dataset):
         total = len(dataset)
         results = {}
         for name, size in splits.items():
-            split, dataset = dataset.train_test_split(train_size=int(size * total), seed=0).values()
+            split, dataset = dataset.train_test_split(train_size=int(size * total), seed=42).values()
             results[name] = split
         if not self.quiet:
             print(f'Splits: { {name: len(split) for name, split in results.items() } }')
@@ -133,6 +133,8 @@ class ChunkDataset(data.Dataset):
 
 
 class XLabDataModule(L.LightningDataModule):
+    """XLab data module"""
+
     def __init__(
             self,
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
