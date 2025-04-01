@@ -70,7 +70,7 @@ class XLabModule(L.LightningModule, ABC):
 class XLabTransformer(XLabModule):
     def __init__(self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
-            pos_enc: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.TransformerEncoder,
+            position: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.TransformerEncoder,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
@@ -79,7 +79,7 @@ class XLabTransformer(XLabModule):
         super().__init__(pad_index)
         self.model = models.GenerativeTextTransformer(
             n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
-            pos_enc=pos_enc, encoder=encoder,
+            position=position, encoder=encoder,
             n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
@@ -90,7 +90,7 @@ class XLabTransformer(XLabModule):
 class XLabPyTorch(XLabModule):
     def __init__(self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
-            pos_enc: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.PyTorchEncoder,
+            position: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.PyTorchEncoder,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
@@ -98,7 +98,7 @@ class XLabPyTorch(XLabModule):
         super().__init__(pad_index)
         self.model = models.GenerativeTextTransformer(
             n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
-            pos_enc=pos_enc, encoder=encoder,
+            position=position, encoder=encoder,
             n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,

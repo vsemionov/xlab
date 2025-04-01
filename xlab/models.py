@@ -40,6 +40,17 @@ class PositionalEncoding(nn.Module):
         return self.enc[:x.size(-2)]
 
 
+class PositionalEmbedding(nn.Module):
+    def __init__(self, max_len, d_model):
+        super().__init__()
+        self.emb = nn.Embedding(max_len, d_model)
+        idx = torch.arange(max_len)
+        self.register_buffer('idx', idx, persistent=False)
+
+    def forward(self, x):
+        return self.emb(self.idx[:x.size(-2)])
+
+
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff, activation, dropout=0.1):
         super().__init__()
@@ -176,15 +187,15 @@ class PyTorchEncoder(nn.Module, ParameterInit):
 
 
 class Transformer(nn.Module):
-    def __init__(self, pos_enc=PositionalEncoding, encoder=TransformerEncoder,
+    def __init__(self, position=PositionalEncoding, encoder=TransformerEncoder,
             max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, dropout=0.1, **kwargs):
         super().__init__()
-        self.pos_enc = pos_enc(max_len, d_model)
+        self.position = position(max_len, d_model)
         self.dropout = nn.Dropout(dropout)
         self.encoder = encoder(max_len, d_model, n_blocks, n_heads, d_ff, dropout=dropout, **kwargs)
 
     def forward(self, x, seq_mask=None):
-        x = x + self.pos_enc(x).unsqueeze(0)
+        x = x + self.position(x).unsqueeze(0)
         x = self.dropout(x)
         x = self.encoder(x, seq_mask=seq_mask)
         return x
