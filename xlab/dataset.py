@@ -135,6 +135,7 @@ class XLabDataset(L.LightningDataModule):
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
             tokenizer: str = 'basic_english', language: str = 'en', max_tokens: int = 10_000,
+            num_proc: int = 4,
             seq_len: int = 128,
             batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = True,
     ):
@@ -143,6 +144,7 @@ class XLabDataset(L.LightningDataModule):
         self.name = name
         self.splits = splits
         self.tokenizer = Tokenizer(tokenizer, language=language, max_tokens=max_tokens)
+        self.num_proc = num_proc
         self.seq_len = seq_len
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -155,7 +157,7 @@ class XLabDataset(L.LightningDataModule):
             path=self.path, name=self.name,
             tokenizer=self.tokenizer,
             splits=self.splits, split=split,
-            num_proc=self.num_workers,
+            num_proc=self.num_proc,
             **kwargs
         )
 
