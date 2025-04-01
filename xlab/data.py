@@ -40,15 +40,13 @@ class TextDataset(data.Dataset):
             tokenizer: Callable[[str], list[str]], max_tokens: int,
             splits: dict[str, float], split: str,
             vocab: Optional[torchtext.vocab.Vocab] = None,
-            prepare: bool = True, num_proc: int = 4, quiet: bool = False,
+            num_proc: int = 4, quiet: bool = False,
     ):
-        assert prepare or vocab is not None
         super().__init__()
         self.num_proc = num_proc
         self.quiet = quiet
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits)
-        splits = splits if prepare else {name: data for name, data in splits.items() if name == split}
         splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
         self.vocab = self._index(splits['train'], max_tokens) if vocab is None else vocab
         splits = {name: self._vectorize(split, self.vocab) for name, split in splits.items()}
@@ -175,7 +173,7 @@ class XLabDataset(L.LightningDataModule):
 
     def setup(self, stage):
         vocab = torch.load(self._cache_dir / 'vocab.pt')
-        kwargs = dict(prepare=False, vocab=vocab, quiet=True)
+        kwargs = dict(vocab=vocab, quiet=True)
         if stage == 'fit':
             self.datasets['train'] = self._dataset('train', **kwargs)
             self.datasets['val'] = self._dataset('val', **kwargs)
