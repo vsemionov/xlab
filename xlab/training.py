@@ -68,7 +68,8 @@ class XLabModule(L.LightningModule, ABC):
 
 
 class XLabTransformer(XLabModule):
-    def __init__(self,
+    def __init__(
+            self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.TransformerEncoder,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
@@ -88,7 +89,8 @@ class XLabTransformer(XLabModule):
 
 
 class XLabPyTorch(XLabModule):
-    def __init__(self,
+    def __init__(
+            self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = models.PositionalEncoding, encoder: type[nn.Module] = models.PyTorchEncoder,
             n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,

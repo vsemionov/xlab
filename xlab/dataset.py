@@ -34,7 +34,8 @@ class TextDataset(data.Dataset):
     unk_token = '<unk>'
     specials = [pad_token, sos_token, eos_token, unk_token]
 
-    def __init__(self,
+    def __init__(
+            self,
             path: str, name: Optional[str],
             tokenizer: Callable[[str], list[str]], max_tokens: int,
             splits: dict[str, float], split: str,
@@ -133,7 +134,8 @@ class ChunkDataset(data.Dataset):
 
 
 class XLabDataset(L.LightningDataModule):
-    def __init__(self,
+    def __init__(
+            self,
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
             tokenizer: str = 'basic_english', max_tokens: int = 20_000,
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
