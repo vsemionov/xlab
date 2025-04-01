@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from functools import partial
 from typing import Optional
 import warnings
@@ -41,9 +40,10 @@ class TokenDataset(data.Dataset):
             tokenizer: str, max_tokens: int,
             splits: dict[str, float], split: str,
             vocab: Optional[torchtext.vocab.Vocab] = None,
-            quiet: bool = False,
+            num_proc: int = 4, quiet: bool = False,
     ):
         super().__init__()
+        self.num_proc = num_proc
         self.quiet = quiet
         self.tokenizer = torchtext.data.utils.get_tokenizer(tokenizer)
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
@@ -56,7 +56,7 @@ class TokenDataset(data.Dataset):
         def tokenize(row):
             row['tokens'] = tokenizer(row['text'])
             return row
-        dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=os.cpu_count(), desc='Tokenizing')
+        dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=self.num_proc, desc='Tokenizing')
         return dataset
 
     def _split(self, dataset, splits):
@@ -83,7 +83,7 @@ class TokenDataset(data.Dataset):
         def vectorize(row):
             row['indices'] = np.array(vocab.lookup_indices(row['tokens']))
             return row
-        dataset = dataset.map(vectorize, remove_columns=['tokens'], num_proc=os.cpu_count(), desc='Vectorizing')
+        dataset = dataset.map(vectorize, remove_columns=['tokens'], num_proc=self.num_proc, desc='Vectorizing')
         return dataset
 
     def __len__(self):
@@ -157,6 +157,7 @@ class XLabDataset(L.LightningDataModule):
             path=self.path, name=self.name,
             tokenizer=self.tokenizer, max_tokens=self.max_tokens,
             splits=self.splits,
+            num_proc=self.num_workers,
         )
         self._cache_dir = platformdirs.user_cache_path(config.APP_NAME, ensure_exists=True)
 
