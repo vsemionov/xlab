@@ -37,13 +37,14 @@ class TokenDataset(data.Dataset):
             path: str, name: Optional[str],
             tokenizer: str, max_tokens: int,
             splits: dict[str, float], split: str,
+            vocab: Optional[torchtext.vocab.Vocab] = None,
     ):
         super().__init__()
         self.tokenizer = torchtext.data.utils.get_tokenizer(tokenizer)
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         dataset = self._tokenize(dataset, self.tokenizer)
         splits = self._split(dataset, splits)
-        self.vocab = self._index(splits['train'], max_tokens)
+        self.vocab = self._index(splits['train'], max_tokens) if vocab is None else vocab
         self.dataset = self._vectorize(splits[split], self.vocab)
 
     def _tokenize(self, dataset, tokenizer):
@@ -159,7 +160,8 @@ class XLabDataset(L.LightningDataModule):
         dataset_init = partial(SequenceDataset, seq_len=self.seq_len)
         if stage == 'fit':
             self._datasets['train'] = dataset_init(self._inner_init(split='train'))
-            self._datasets['val'] = dataset_init(self._inner_init(split='val'))
+            self._datasets['val'] = dataset_init(
+                self._inner_init(split='val', vocab=self._datasets['train'].dataset.vocab))
         elif stage == 'validate':
             self._datasets['val'] = dataset_init(self._inner_init(split='val'))
         elif stage == 'test':
