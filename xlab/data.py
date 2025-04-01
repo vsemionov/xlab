@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import os
-import warnings
+from functools import partial
 from typing import Optional
+import warnings
 
 import numpy as np
 import torch
@@ -130,6 +131,8 @@ class XLabDataset(L.LightningDataModule):
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
             tokenizer: str = 'basic_english', max_tokens: int = 20_000,
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
+            seq_len: int = 128,
+            batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = True,
     ):
         super().__init__()
         self.path = path
@@ -137,29 +140,63 @@ class XLabDataset(L.LightningDataModule):
         self.tokenizer = tokenizer
         self.max_tokens = max_tokens
         self.splits = splits
+        self.seq_len = seq_len
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.persistent_workers = persistent_workers
+        self._datasets = {}
+        self._inner_init = partial(
+            TokenDataset,
+            path=self.path, name=self.name,
+            tokenizer=self.tokenizer, max_tokens=self.max_tokens,
+            splits=self.splits,
+        )
 
     def prepare_data(self):
-        TokenDataset(
-            path=self.path, name=self.name,
-            tokenizer=self.tokenizer, max_tokens=self.max_tokens,
-            splits=self.splits, split='train',
-        )
+        self._inner_init(split='train')
 
     def setup(self, stage):
-        TokenDataset(
-            path=self.path, name=self.name,
-            tokenizer=self.tokenizer, max_tokens=self.max_tokens,
-            splits=self.splits, split='train',
-        )
+        dataset_init = partial(SequenceDataset, seq_len=self.seq_len)
+        if stage == 'fit':
+            self._datasets['train'] = dataset_init(self._inner_init(split='train'))
+            self._datasets['val'] = dataset_init(self._inner_init(split='val'))
+        elif stage == 'validate':
+            self._datasets['val'] = dataset_init(self._inner_init(split='val'))
+        elif stage == 'test':
+            self._datasets['test'] = dataset_init(self._inner_init(split='test'))
+        elif stage == 'predict':
+            self._datasets['predict'] = dataset_init(self._inner_init(split='predict'))
+        else:
+            assert False
 
     def train_dataloader(self):
-        pass
+        return data.DataLoader(
+            self._datasets['train'],
+            batch_size=self.batch_size,
+            shuffle=True,
+            drop_last=True,
+            num_workers=self.num_workers,
+            persistent_workers=self.persistent_workers,
+        )
 
     def val_dataloader(self):
-        pass
+        return data.DataLoader(
+            self._datasets['val'],
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            persistent_workers=self.persistent_workers,
+        )
 
     def test_dataloader(self):
-        pass
+        return data.DataLoader(
+            self._datasets['test'],
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
 
     def predict_dataloader(self):
-        pass
+        return data.DataLoader(
+            self._datasets['predict'],
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
