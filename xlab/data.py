@@ -75,7 +75,7 @@ class TextDataset(data.Dataset):
     def _index(self, dataset, max_tokens):
         iterator = (sample['tokens'] for sample in tqdm(dataset, desc='Indexing'))
         vocab = torchtext.vocab.build_vocab_from_iterator(iterator, specials=self.specials, max_tokens=max_tokens)
-        vocab.set_default_index(self.specials.index('<unk>'))
+        vocab.set_default_index(vocab(self.unk_token))
         return vocab
 
     def _vectorize(self, dataset, vocab):
