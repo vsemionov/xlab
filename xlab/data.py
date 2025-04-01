@@ -70,7 +70,7 @@ class TokenDataset(data.Dataset):
         if not self.quiet:
             print(f'Splits: { {name: len(split) for name, split in results.items() } }')
         if len(dataset) > 0:
-            warnings.warn(f'{len(dataset)} unsplit samples out of {total} total')
+            warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
         return results
 
     def _index(self, dataset, max_tokens):
