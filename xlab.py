@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 import multiprocessing
 
 from lightning.pytorch.cli import LightningCLI
 
+from xlab.config import APP_NAME
 from xlab.dataset import XLabDataModule
 from xlab.models import XLabModel
 
@@ -32,7 +34,9 @@ class XLabCLI(LightningCLI):
 
 def main():
     multiprocessing.set_start_method('fork')  # needed on macos
-    XLabCLI(XLabModel, XLabDataModule)
+    parser_kwargs = {stage: {'default_config_files': [Path(__file__).parent / 'conf' / f'{APP_NAME}.yaml']}
+        for stage in ['fit', 'validate', 'test', 'predict']}
+    XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
 
 if __name__ == '__main__':
     main()
