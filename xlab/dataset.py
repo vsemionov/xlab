@@ -34,10 +34,12 @@ class TextDataset(data.Dataset):
             path: str, name: Optional[str],
             splits: dict[str, float], split: str,
             tokenizer: Tokenizer,
+            column: str = 'text',
             num_proc: int = 4, quiet: bool = False,
     ):
         super().__init__()
         self.quiet = quiet
+        self.column = column
         self.num_proc = num_proc
         self.tokenizer = tokenizer
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
@@ -64,10 +66,11 @@ class TextDataset(data.Dataset):
 
     def _tokenize(self, dataset, tokenizer):
         def tokenize(row):
-            row['tokens'] = tokenizer(row['text'])
+            row['tokens'] = tokenizer(row[column])
             return row
+        column = self.column
         tokenizer = copy.copy(tokenizer).reset_vocab()  # discard vocabulary state to prevent cache misses
-        dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=self.num_proc, desc='Tokenizing')
+        dataset = dataset.map(tokenize, remove_columns=[column], num_proc=self.num_proc, desc='Tokenizing')
         return dataset
 
     def _build_vocab(self, dataset, tokenizer):
@@ -135,6 +138,7 @@ class XLabDataModule(L.LightningDataModule):
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
             tokenizer: str = 'basic_english', language: str = 'en', max_tokens: int = 10_000,
+            column: str = 'text',
             num_proc: int = 4,
             seq_len: int = 128,
             batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = False,
@@ -144,6 +148,7 @@ class XLabDataModule(L.LightningDataModule):
         self.name = name
         self.splits = splits
         self.tokenizer = Tokenizer(tokenizer, language=language, max_tokens=max_tokens)
+        self.column = column
         self.num_proc = num_proc
         self.seq_len = seq_len
         self.batch_size = batch_size
@@ -155,8 +160,9 @@ class XLabDataModule(L.LightningDataModule):
     def _text_dataset(self, split, **kwargs):
         return TextDataset(
             path=self.path, name=self.name,
-            tokenizer=self.tokenizer,
             splits=self.splits, split=split,
+            tokenizer=self.tokenizer,
+            column=self.column,
             num_proc=self.num_proc,
             **kwargs
         )
