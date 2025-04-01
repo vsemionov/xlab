@@ -67,3 +67,6 @@ class Tokenizer:
     def reset_vocab(self) -> 'Tokenizer':
         self.vocab = None
         return self
+
+    def vocab_size(self) -> int:
+        return len(self.vocab)
