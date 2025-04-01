@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 from typing import Optional
 import warnings
 
@@ -65,6 +66,7 @@ class TextDataset(data.Dataset):
         def tokenize(row):
             row['tokens'] = tokenizer(row['text'])
             return row
+        tokenizer = copy.copy(tokenizer).reset_vocab()  # discard vocabulary state to prevent cache misses
         dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=self.num_proc, desc='Tokenizing')
         return dataset
 

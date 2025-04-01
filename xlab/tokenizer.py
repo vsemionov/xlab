@@ -51,12 +51,19 @@ class Tokenizer:
     def has_vocab(self) -> bool:
         return self.vocab is not None
 
-    def build_vocab(self, batches: Iterable[list[str]]):
+    def build_vocab(self, batches: Iterable[list[str]]) -> 'Tokenizer':
         self.vocab = build_vocab_from_iterator(batches, specials=self.specials, max_tokens=self.max_tokens)
         self.vocab.set_default_index(self.vocab[self.unk_token])
+        return self
 
-    def load_vocab(self, path: Union[str, Path]):
+    def load_vocab(self, path: Union[str, Path]) -> 'Tokenizer':
         self.vocab = torch.load(path)
+        return self
 
-    def save_vocab(self, path: Union[str, Path]):
+    def save_vocab(self, path: Union[str, Path]) -> 'Tokenizer':
         torch.save(self.vocab, path)
+        return self
+
+    def reset_vocab(self) -> 'Tokenizer':
+        self.vocab = None
+        return self
