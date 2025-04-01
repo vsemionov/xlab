@@ -1,0 +1,43 @@
+seed_everything: 42
+trainer:
+  logger: null
+  callbacks: null
+  max_epochs: 20
+  deterministic: null
+  benchmark: null
+model:
+  max_len: 128
+  d_model: 128
+  position: xlab.transformers.PositionalEncoding
+  n_blocks: 2
+  n_heads: 2
+  d_ff: 256
+  dropout: 0.1
+  prenorm: false
+  postnorm: false
+  norm: torch.nn.LayerNorm
+  activation:
+    class_path: torch.nn.ReLU
+    init_args:
+      inplace: false
+  attn_drop: true
+  ff_drop: true
+data:
+  path: wikipedia
+  name: 20220301.simple
+  splits:
+    train: 0.1
+    val: 0.05
+    test: 0.05
+    predict: 0.05
+  tokenizer: basic_english
+  language: en
+  max_tokens: 10000
+  column: text
+  num_proc: 4
+  batch_size: 32
+  num_workers: 4
+  persistent_workers: false
+optimizer: null
+lr_scheduler: null
+ckpt_path: null
