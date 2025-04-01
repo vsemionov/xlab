@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from functools import partial
-from typing import Optional
+from typing import Optional, Callable
 import warnings
 
 import numpy as np
@@ -37,7 +37,7 @@ class TokenDataset(data.Dataset):
 
     def __init__(self,
             path: str, name: Optional[str],
-            tokenizer: str, max_tokens: int,
+            tokenizer: Callable[[str], list[str]], max_tokens: int,
             splits: dict[str, float], split: str,
             vocab: Optional[torchtext.vocab.Vocab] = None,
             num_proc: int = 4, quiet: bool = False,
@@ -45,9 +45,8 @@ class TokenDataset(data.Dataset):
         super().__init__()
         self.num_proc = num_proc
         self.quiet = quiet
-        self.tokenizer = torchtext.data.utils.get_tokenizer(tokenizer)
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
-        dataset = self._tokenize(dataset, self.tokenizer)
+        dataset = self._tokenize(dataset, tokenizer)
         splits = self._split(dataset, splits)
         self.vocab = self._index(splits['train'], max_tokens) if vocab is None else vocab
         self.dataset = self._vectorize(splits[split], self.vocab)
@@ -144,7 +143,7 @@ class XLabDataset(L.LightningDataModule):
         super().__init__()
         self.path = path
         self.name = name
-        self.tokenizer = tokenizer
+        self.tokenizer = torchtext.data.utils.get_tokenizer(tokenizer)
         self.max_tokens = max_tokens
         self.splits = splits
         self.seq_len = seq_len
