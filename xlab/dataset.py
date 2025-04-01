@@ -129,7 +129,7 @@ class ChunkDataset(data.Dataset):
         return x, y
 
 
-class XLabDataset(L.LightningDataModule):
+class XLabDataModule(L.LightningDataModule):
     def __init__(
             self,
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',

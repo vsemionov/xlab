@@ -67,7 +67,7 @@ class XLabModule(L.LightningModule, ABC):
         return y
 
 
-class XLabTransformer(XLabModule):
+class XLabModel(XLabModule):
     def __init__(
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
@@ -88,7 +88,7 @@ class XLabTransformer(XLabModule):
         )
 
 
-class XLabPyTorch(XLabModule):
+class XLabPyTorchModel(XLabModule):
     def __init__(
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
