@@ -48,7 +48,7 @@ class TextDataset(data.Dataset):
         splits = self._split(dataset, splits)
         splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
         self.vocab = self._index(splits['train'], max_tokens) if vocab is None else vocab
-        splits = {name: self._vectorize(split, self.vocab) for name, split in splits.items()}
+        splits = {name: self._encode(split, self.vocab) for name, split in splits.items()}
         self.dataset = splits[split]
 
     def _split(self, dataset, splits):
@@ -78,11 +78,11 @@ class TextDataset(data.Dataset):
         vocab.set_default_index(vocab(self.unk_token))
         return vocab
 
-    def _vectorize(self, dataset, vocab):
-        def vectorize(row):
+    def _encode(self, dataset, vocab):
+        def encode(row):
             row['indices'] = np.array(vocab.lookup_indices(row['tokens']))
             return row
-        dataset = dataset.map(vectorize, remove_columns=['tokens'], num_proc=self.num_proc, desc='Vectorizing')
+        dataset = dataset.map(encode, remove_columns=['tokens'], num_proc=self.num_proc, desc='Encoding')
         return dataset
 
     def __len__(self):
