@@ -137,7 +137,7 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer: str = 'basic_english', language: str = 'en', max_tokens: int = 10_000,
             num_proc: int = 4,
             seq_len: int = 128,
-            batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = True,
+            batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = False,
     ):
         super().__init__()
         self.path = path
