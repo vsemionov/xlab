@@ -1,5 +1,7 @@
 datasets
 lightning
+numpy
 platformdirs
 torch
+torchtext
 tqdm
