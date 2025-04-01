@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import collections
-from typing import Optional, List
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -26,7 +26,7 @@ def sample(
         output_length: int,
         block_size: Optional[int],
         eos_class: Optional[int] = None,
-        exclude_classes: Optional[List[int]] = None,
+        exclude_classes: Optional[list[int]] = None,
         temperature: float = 1,
         top_k: Optional[float] = None,
         top_p: Optional[float] = None,
@@ -93,7 +93,7 @@ def beam_search(
         output_length: int,
         block_size: Optional[int],
         eos_class: Optional[int] = None,
-        exclude_classes: Optional[List[int]] = None,
+        exclude_classes: Optional[list[int]] = None,
         length_penalty: float = 0
 ):
     """
