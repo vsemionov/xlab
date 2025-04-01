@@ -46,17 +46,11 @@ class TextDataset(data.Dataset):
         self.num_proc = num_proc
         self.quiet = quiet
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
-        dataset = self._tokenize(dataset, tokenizer)
         splits = self._split(dataset, splits)
+        splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
         self.vocab = self._index(splits['train'], max_tokens) if vocab is None else vocab
-        self.dataset = self._vectorize(splits[split], self.vocab)
-
-    def _tokenize(self, dataset, tokenizer):
-        def tokenize(row):
-            row['tokens'] = tokenizer(row['text'])
-            return row
-        dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=self.num_proc, desc='Tokenizing')
-        return dataset
+        splits = {name: self._vectorize(split, self.vocab) for name, split in splits.items()}
+        self.dataset = splits[split]
 
     def _split(self, dataset, splits):
         if isinstance(dataset, (datasets.DatasetDict, datasets.IterableDatasetDict)):
@@ -68,9 +62,16 @@ class TextDataset(data.Dataset):
             results[name] = split
         if not self.quiet:
             print(f'Splits: { {name: len(split) for name, split in results.items() } }')
-        if len(dataset) > 0:
-            warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
+            if len(dataset) > 0:
+                warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
         return results
+
+    def _tokenize(self, dataset, tokenizer):
+        def tokenize(row):
+            row['tokens'] = tokenizer(row['text'])
+            return row
+        dataset = dataset.map(tokenize, remove_columns=['text'], num_proc=self.num_proc, desc='Tokenizing')
+        return dataset
 
     def _index(self, dataset, max_tokens):
         iterator = (sample['tokens'] for sample in tqdm(dataset, desc='Indexing'))
