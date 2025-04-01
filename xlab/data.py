@@ -28,7 +28,7 @@ from tqdm.auto import tqdm
 from . import config
 
 
-class TokenDataset(data.Dataset):
+class TextDataset(data.Dataset):
     pad_token = '<pad>'
     sos_token = '<sos>'
     eos_token = '<eos>'
@@ -92,8 +92,8 @@ class TokenDataset(data.Dataset):
         return self.dataset[idx]['indices']
 
 
-class SequenceDataset(data.Dataset):
-    def __init__(self, dataset: TokenDataset, seq_len: int):
+class ChunkDataset(data.Dataset):
+    def __init__(self, dataset: TextDataset, seq_len: int):
         self.dataset = dataset
         self.seq_len = seq_len
         self.index = self._chunk(dataset)
@@ -152,7 +152,7 @@ class XLabDataset(L.LightningDataModule):
         self.persistent_workers = persistent_workers
         self.datasets = {}
         self._td_init = partial(
-            TokenDataset,
+            TextDataset,
             path=self.path, name=self.name,
             tokenizer=self.tokenizer, max_tokens=self.max_tokens,
             splits=self.splits,
@@ -167,7 +167,7 @@ class XLabDataset(L.LightningDataModule):
     def setup(self, stage):
         vocab = torch.load(self._cache_dir / 'vocab.pt')
         td_init = partial(self._td_init, vocab=vocab, quiet=True)
-        dataset_init = partial(SequenceDataset, seq_len=self.seq_len)
+        dataset_init = partial(ChunkDataset, seq_len=self.seq_len)
         if stage == 'fit':
             self.datasets['train'] = dataset_init(td_init(split='train'))
             self.datasets['val'] = dataset_init(td_init(split='val'))
