@@ -50,7 +50,7 @@ data:
     predict: 0.05
   tokenizer: basic_english
   language: en
-  max_tokens: 10000
+  max_tokens: 20_000
   column: text
   num_proc: 4
   progress: tqdm
