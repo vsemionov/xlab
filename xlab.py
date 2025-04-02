@@ -18,7 +18,7 @@ from pathlib import Path
 import multiprocessing
 
 from lightning.pytorch.cli import LightningCLI
-from lightning.pytorch.callbacks import RichProgressBar
+from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar
 
 from xlab.config import APP_NAME
 from xlab.dataset import XLabDataModule
@@ -33,9 +33,20 @@ class XLabCLI(LightningCLI):
             lambda tokenizer: tokenizer.specials.index(tokenizer.pad_token), apply_on='instantiate')
 
 
-class XLabRichProgressBar(RichProgressBar):
-    # workaround for failing config validation
+class Progress:
+    def get_metrics(self, *args, **kwargs):
+        items = super().get_metrics(*args, **kwargs)
+        items.pop('v_num', None)
+        return items
+
+
+class XLabTQDMProgressBar(Progress, TQDMProgressBar):
+    pass
+
+
+class XLabRichProgressBar(Progress, RichProgressBar):
     def __init__(self):
+        # workaround for failing config validation
         super().__init__()
 
 
