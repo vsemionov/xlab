@@ -28,11 +28,11 @@ trainer:
   benchmark: null
 model:
   max_len: 128
-  d_model: 128
+  d_model: 256
   position: xlab.transformers.PositionalEncoding
-  n_blocks: 2
-  n_heads: 2
-  d_ff: 256
+  n_blocks: 4
+  n_heads: 4
+  d_ff: 512
   dropout: 0.1
   prenorm: false
   postnorm: false
@@ -54,7 +54,7 @@ data:
   column: text
   num_proc: 4
   progress: tqdm
-  batch_size: 32
+  batch_size: 64
   num_workers: 4
   persistent_workers: false
 optimizer:
