@@ -24,8 +24,8 @@ trainer:
         min_delta: 0
         patience: 5
   max_epochs: 20
-  deterministic: null
-  benchmark: null
+  deterministic: true
+  benchmark: false
 model:
   max_len: 128
   d_model: 256
