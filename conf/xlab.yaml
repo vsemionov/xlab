@@ -1,5 +1,10 @@
 seed_everything: 42
 trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: null
   logger:
     class_path: TensorBoardLogger
     init_args:
