@@ -1,6 +1,7 @@
 datasets
 jsonargparse[signatures]
 lightning
+#mlflow-skinny
 numpy
 platformdirs
 rich
