@@ -18,6 +18,7 @@ from pathlib import Path
 import multiprocessing
 
 from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.callbacks import RichProgressBar
 
 from xlab.config import APP_NAME
 from xlab.dataset import XLabDataModule
@@ -32,10 +33,18 @@ class XLabCLI(LightningCLI):
             lambda tokenizer: tokenizer.specials.index(tokenizer.pad_token), apply_on='instantiate')
 
 
+class XLabRichProgressBar(RichProgressBar):
+    # workaround for failing config validation
+    def __init__(self):
+        super().__init__()
+
+
 def main():
     multiprocessing.set_start_method('fork')  # needed on macos
+
     parser_kwargs = {stage: {'default_config_files': [Path(__file__).parent / 'conf' / f'{APP_NAME}.yaml']}
         for stage in ['fit', 'validate', 'test', 'predict']}
+
     XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
 
 if __name__ == '__main__':

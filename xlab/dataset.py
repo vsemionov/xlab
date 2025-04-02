@@ -21,11 +21,9 @@ import torch
 import torch.utils.data as data
 import lightning as L
 import datasets
-import platformdirs
-from tqdm.auto import tqdm
 
-from . import config
 from .tokenizer import Tokenizer
+from .util import progress_bar, get_cache_dir
 
 
 class TextDataset(data.Dataset):
@@ -36,11 +34,13 @@ class TextDataset(data.Dataset):
             tokenizer: Tokenizer,
             column: str = 'text',
             num_proc: int = 4, quiet: bool = False,
+            progress: str = 'tqdm',
     ):
         super().__init__()
         self.quiet = quiet
         self.column = column
         self.num_proc = num_proc
+        self.progress = progress
         self.tokenizer = tokenizer
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits)
@@ -74,7 +74,7 @@ class TextDataset(data.Dataset):
         return dataset
 
     def _build_vocab(self, dataset, tokenizer):
-        batches = (sample['tokens'] for sample in tqdm(dataset, desc='Building vocabulary'))
+        batches = (sample['tokens'] for sample in progress_bar(dataset, kind=self.progress, desc='Building vocabulary'))
         tokenizer.build_vocab(batches)
 
     def _index(self, dataset, tokenizer):
@@ -92,14 +92,16 @@ class TextDataset(data.Dataset):
 
 
 class ChunkDataset(data.Dataset):
-    def __init__(self, dataset: TextDataset, seq_len: int):
+    def __init__(self, dataset: TextDataset, seq_len: int, progress: str = 'tqdm'):
+        super().__init__()
         self.dataset = dataset
         self.seq_len = seq_len
+        self.progress = progress
         self.index = self._chunk(dataset)
 
     def _chunk(self, dataset):
         index = []
-        for i, indices in enumerate(tqdm(dataset, desc='Chunking')):
+        for i, indices in enumerate(progress_bar(dataset, kind=self.progress, desc='Chunking')):
             n_samples = len(indices) + 1  # account for <sos>
             index.extend([(i, j) for j in range(n_samples)])
         return index
@@ -142,6 +144,7 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer: str = 'basic_english', language: str = 'en', max_tokens: int = 10_000,
             column: str = 'text',
             num_proc: int = 4,
+            progress: str = 'tqdm',
             seq_len: int = 128,
             batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = False,
     ):
@@ -152,12 +155,13 @@ class XLabDataModule(L.LightningDataModule):
         self.tokenizer = Tokenizer(tokenizer, language=language, max_tokens=max_tokens)
         self.column = column
         self.num_proc = num_proc
+        self.progress = progress
         self.seq_len = seq_len
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
         self.datasets = {}
-        self._cache_dir = platformdirs.user_cache_path(config.APP_NAME, ensure_exists=True)
+        self._vocab_cache_path = get_cache_dir() / 'vocab.pt'
 
     def _text_dataset(self, split, **kwargs):
         return TextDataset(
@@ -166,19 +170,20 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer=self.tokenizer,
             column=self.column,
             num_proc=self.num_proc,
+            progress=self.progress,
             **kwargs
         )
 
     def _dataset(self, split, **kwargs):
         text_dataset = self._text_dataset(split, **kwargs)
-        return ChunkDataset(text_dataset, seq_len=self.seq_len)
+        return ChunkDataset(text_dataset, seq_len=self.seq_len, progress=self.progress)
 
     def prepare_data(self):
         self._text_dataset('train')
-        self.tokenizer.save_vocab(self._cache_dir / 'vocab.pt')
+        self.tokenizer.save_vocab(self._vocab_cache_path)
 
     def setup(self, stage):
-        self.tokenizer.load_vocab(self._cache_dir / 'vocab.pt')
+        self.tokenizer.load_vocab(self._vocab_cache_path)
         kwargs = dict(quiet=True)
         if stage == 'fit':
             self.datasets['train'] = self._dataset('train', **kwargs)

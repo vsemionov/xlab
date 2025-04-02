@@ -1,7 +1,21 @@
 seed_everything: 42
 trainer:
-  logger: null  # TODO: configure
-  callbacks: null  # TODO: model checkpoint (check saved best metric), early stopping?, lr monitor, save config (to log config)
+  logger:  # TODO: configure
+    class_path: CSVLogger
+    init_args:
+      save_dir: .
+  callbacks:  # TODO: model checkpoint (check saved best metric), early stopping?, lr monitor, save config (to log config)
+    - RichModelSummary
+    - XLabRichProgressBar
+    - LearningRateMonitor
+    - class_path: ModelCheckpoint
+      init_args:
+        monitor: val_loss
+        mode: min
+        save_last: true
+        save_top_k: 10
+        every_n_epochs: null
+        every_n_train_steps: null
   max_epochs: 20
   deterministic: null  # TODO: check speed and enable?
   benchmark: null
@@ -16,8 +30,7 @@ model:
   prenorm: false
   postnorm: false
   norm: torch.nn.LayerNorm
-  activation:
-    class_path: torch.nn.ReLU
+  activation: torch.nn.ReLU
   attn_drop: true
   ff_drop: true
 data:
@@ -33,6 +46,7 @@ data:
   max_tokens: 10000
   column: text
   num_proc: 4
+  progress: tqdm
   batch_size: 32
   num_workers: 4
   persistent_workers: false

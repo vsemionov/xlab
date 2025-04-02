@@ -3,6 +3,7 @@ jsonargparse[signatures]
 lightning
 numpy
 platformdirs
+rich
 torch
 torchtext
 tqdm
