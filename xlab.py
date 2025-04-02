@@ -17,8 +17,9 @@
 from pathlib import Path
 import multiprocessing
 
-from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.cli import LightningCLI, SaveConfigCallback
 from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar
+from lightning.pytorch.loggers import Logger
 
 from xlab.config import APP_NAME
 from xlab.dataset import XLabDataModule
@@ -50,13 +51,21 @@ class XLabRichProgressBar(Progress, RichProgressBar):
         super().__init__()
 
 
+class LoggerSaveConfigCallback(SaveConfigCallback):
+    def save_config(self, trainer, pl_module, stage):
+        super().save_config(trainer, pl_module, stage)
+        if isinstance(trainer.logger, Logger):
+            config = self.parser.dump(self.config, skip_none=False)
+            trainer.logger.log_hyperparams({'config': config})
+
+
 def main():
     multiprocessing.set_start_method('fork')  # needed on macos
 
     parser_kwargs = {stage: {'default_config_files': [Path(__file__).parent / 'conf' / f'{APP_NAME}.yaml']}
         for stage in ['fit', 'validate', 'test', 'predict']}
 
-    XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
+    XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs, save_config_callback=LoggerSaveConfigCallback)
 
 if __name__ == '__main__':
     main()
