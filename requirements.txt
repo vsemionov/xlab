@@ -1,9 +1,9 @@
 datasets
 jsonargparse[signatures]
 lightning
-numpy
+numpy==1.26.4
 platformdirs
 rich
-torch
+torch==2.2.2
 torchtext
 tqdm
