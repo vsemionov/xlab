@@ -19,7 +19,7 @@ import multiprocessing
 
 from lightning.pytorch.cli import LightningCLI, SaveConfigCallback
 from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar
-from lightning.pytorch.loggers import Logger
+from lightning.pytorch.loggers import CSVLogger, TensorBoardLogger
 
 from xlab.config import APP_NAME
 from xlab.dataset import XLabDataModule
@@ -54,9 +54,10 @@ class XLabRichProgressBar(Progress, RichProgressBar):
 class LoggerSaveConfigCallback(SaveConfigCallback):
     def save_config(self, trainer, pl_module, stage):
         super().save_config(trainer, pl_module, stage)
-        if isinstance(trainer.logger, Logger):
-            config = self.parser.dump(self.config, skip_none=False)
-            trainer.logger.log_hyperparams({'config': config})
+        config = self.parser.dump(self.config, skip_none=False)
+        for logger in trainer.loggers:
+            if not isinstance(logger, (CSVLogger, TensorBoardLogger)):
+                logger.log_hyperparams({'config': config})
 
 
 def main():

@@ -1,12 +1,9 @@
 seed_everything: 42
 trainer:
   logger:
-    - class_path: CSVLogger
-      init_args:
-        save_dir: .
-#    - class_path: MLFlowLogger
-#      init_args:
-#        experiment_name: xlab
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: .
   callbacks:
     - XLabRichProgressBar
     - class_path: LearningRateMonitor
