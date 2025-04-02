@@ -1,6 +1,6 @@
 seed_everything: 42
 trainer:
-  precision: null
+  precision: null  # 32 / 16-mixed
   logger:
     class_path: TensorBoardLogger
     init_args:
@@ -20,7 +20,6 @@ trainer:
       init_args:
         monitor: val_loss
         mode: min
-        min_delta: 0
         patience: 5
   max_epochs: 20
   deterministic: true
@@ -55,7 +54,6 @@ data:
   progress: tqdm
   batch_size: 64
   num_workers: 4
-  persistent_workers: false
 optimizer:
   class_path: Adam
   init_args:
@@ -69,4 +67,3 @@ lr_scheduler:
     factor: 0.1
     patience: 2
     min_lr: 1e-5
-ckpt_path: null
