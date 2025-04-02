@@ -146,7 +146,7 @@ class XLabDataModule(L.LightningDataModule):
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
-            batch_size: int = 32, num_workers: int = 4, persistent_workers: bool = False,
+            batch_size: int = 32, pin_memory: bool = False, num_workers: int = 4, persistent_workers: bool = False,
     ):
         super().__init__()
         self.path = path
@@ -158,6 +158,7 @@ class XLabDataModule(L.LightningDataModule):
         self.progress = progress
         self.seq_len = seq_len
         self.batch_size = batch_size
+        self.pin_memory = pin_memory
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
         self.datasets = {}
@@ -203,6 +204,7 @@ class XLabDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=True,
+            pin_memory=self.pin_memory,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers,
         )
@@ -211,6 +213,7 @@ class XLabDataModule(L.LightningDataModule):
         return data.DataLoader(
             self.datasets['val'],
             batch_size=self.batch_size,
+            pin_memory=self.pin_memory,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers,
         )
@@ -219,6 +222,7 @@ class XLabDataModule(L.LightningDataModule):
         return data.DataLoader(
             self.datasets['test'],
             batch_size=self.batch_size,
+            pin_memory=self.pin_memory,
             num_workers=self.num_workers,
         )
 
@@ -226,5 +230,6 @@ class XLabDataModule(L.LightningDataModule):
         return data.DataLoader(
             self.datasets['predict'],
             batch_size=self.batch_size,
+            pin_memory=self.pin_memory,
             num_workers=self.num_workers,
         )

@@ -53,7 +53,9 @@ data:
   num_proc: 4
   progress: tqdm
   batch_size: 64
+  pin_memory: false
   num_workers: 4
+  persistent_workers: false
 optimizer:
   class_path: Adam
   init_args:
