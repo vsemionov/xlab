@@ -1,9 +1,5 @@
 seed_everything: 42
 trainer:
-  accelerator: auto
-  strategy: auto
-  devices: auto
-  num_nodes: 1
   precision: null
   logger:
     class_path: TensorBoardLogger
@@ -20,8 +16,6 @@ trainer:
         mode: min
         save_last: true
         save_top_k: 10
-        every_n_epochs: null
-        every_n_train_steps: null
     - class_path: EarlyStopping
       init_args:
         monitor: val_loss
@@ -66,9 +60,6 @@ optimizer:
   class_path: Adam
   init_args:
     lr: 3e-4
-    betas:
-      - 0.9
-      - 0.999
     weight_decay: 0.0
 lr_scheduler:
   class_path: ReduceLROnPlateau
