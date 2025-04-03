@@ -59,7 +59,7 @@ data:
   batch_size: 64
   pin_memory: true
   num_workers: 4
-  persistent_workers: false
+  persistent_workers: true
 optimizer:
   class_path: Adam
   init_args:
