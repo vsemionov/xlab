@@ -17,6 +17,7 @@
 from pathlib import Path
 import multiprocessing
 
+import torch
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar
 
@@ -51,6 +52,7 @@ class XLabRichProgressBar(Progress, RichProgressBar):
 
 
 def main():
+    torch.set_float32_matmul_precision('high')
     multiprocessing.set_start_method('fork')  # needed on macos
     delattr(XLabModule, 'configure_optimizers')  # prevents a warning that method will be overridden by configuration
 
