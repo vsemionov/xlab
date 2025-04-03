@@ -38,7 +38,12 @@ from xlab import inference
 @click.option('-w', '--beam-width', type=click.IntRange(min=1), default=10)
 @click.option('-n', '--length-penalty', type=float, default=0)
 @click.option('--debug', is_flag=True)
-def main(checkpoint_path, prompt, device, limit, temperature, top_k, top_p, seed, beam_search, beam_width, length_penalty, debug):
+def main(
+        checkpoint_path, prompt, device,
+        limit, temperature, top_k, top_p, seed,
+        beam_search, beam_width, length_penalty,
+        debug
+):
     if device == 'auto':
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
