@@ -208,6 +208,7 @@ class XLabDataModule(L.LightningDataModule):
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers,
+            generator=torch.Generator().manual_seed(42),
         )
 
     def val_dataloader(self):
