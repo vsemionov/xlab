@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from pathlib import Path
+import warnings
 
 import torch
 import click
@@ -36,14 +37,18 @@ from xlab import inference
 @click.option('-b', '--beam-search', is_flag=True)
 @click.option('-w', '--beam-width', type=click.IntRange(min=1), default=10)
 @click.option('-n', '--length-penalty', type=float, default=0)
-def main(checkpoint_path, prompt, device, limit, temperature, top_k, top_p, seed, beam_search, beam_width, length_penalty):
+@click.option('--debug', is_flag=True)
+def main(checkpoint_path, prompt, device, limit, temperature, top_k, top_p, seed, beam_search, beam_width, length_penalty, debug):
     if device == 'auto':
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     datamodule = XLabDataModule.load_from_checkpoint(checkpoint_path, map_location=device)
     tokenizer = datamodule.tokenizer
 
-    model = XLabModel.load_from_checkpoint(checkpoint_path, map_location=device)
+    with warnings.catch_warnings():
+        if not debug:
+            warnings.simplefilter('ignore')  # prevents warning about unnecessary hyperparameter 'activation'
+        model = XLabModel.load_from_checkpoint(checkpoint_path, map_location=device)
     model.eval().requires_grad_(False)
 
     sos_index, eos_index = [tokenizer[token] for token in [tokenizer.sos_token, tokenizer.eos_token]]
