@@ -28,6 +28,7 @@ class XLabModule(L.LightningModule, ABC):
     @abstractmethod
     def __init__(self, pad_index: Optional[int]):
         super().__init__()
+        self.save_hyperparameters()
         self.pad_index = pad_index
 
     def forward(self, x):
