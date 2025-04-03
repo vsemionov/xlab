@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import copy
-from typing import Optional
+from typing import Optional, Union
 import warnings
 
 import numpy as np
@@ -92,18 +92,21 @@ class TextDataset(data.Dataset):
 
 
 class ChunkDataset(data.Dataset):
-    def __init__(self, dataset: TextDataset, seq_len: int, progress: str = 'tqdm'):
+    def __init__(self, dataset: TextDataset, seq_len: int, chunk_size: Union[float, int] = 0.5, progress: str = 'tqdm'):
         super().__init__()
         self.dataset = dataset
         self.seq_len = seq_len
+        self.chunk_size = int(seq_len * chunk_size) if isinstance(chunk_size, float) else chunk_size
+        assert 0 < self.chunk_size <= self.seq_len
         self.progress = progress
         self.index = self._chunk(dataset)
 
     def _chunk(self, dataset):
         index = []
         for i, indices in enumerate(progress_bar(dataset, kind=self.progress, desc='Chunking')):
-            n_samples = len(indices) + 1  # account for <sos>
-            index.extend([(i, j) for j in range(n_samples)])
+            # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
+            n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
+            index.extend([(i, j * self.chunk_size) for j in range(n_chunks)])
         return index
 
     def __len__(self):
@@ -146,6 +149,7 @@ class XLabDataModule(L.LightningDataModule):
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
+            chunk_size: Union[float, int] = 0.5,
             batch_size: int = 32, pin_memory: bool = False, num_workers: int = 4, persistent_workers: bool = False,
     ):
         super().__init__()
@@ -158,6 +162,7 @@ class XLabDataModule(L.LightningDataModule):
         self.num_proc = num_proc
         self.progress = progress
         self.seq_len = seq_len
+        self.chunk_size = chunk_size
         self.batch_size = batch_size
         self.pin_memory = pin_memory
         self.num_workers = num_workers
@@ -178,7 +183,7 @@ class XLabDataModule(L.LightningDataModule):
 
     def _dataset(self, split, **kwargs):
         text_dataset = self._text_dataset(split, **kwargs)
-        return ChunkDataset(text_dataset, seq_len=self.seq_len, progress=self.progress)
+        return ChunkDataset(text_dataset, seq_len=self.seq_len, chunk_size=self.chunk_size, progress=self.progress)
 
     def prepare_data(self):
         self._text_dataset('train')

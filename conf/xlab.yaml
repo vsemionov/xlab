@@ -55,6 +55,7 @@ data:
   column: text
   num_proc: 4
   progress: tqdm
+  chunk_size: 0.5
   batch_size: 64
   pin_memory: true
   num_workers: 4
