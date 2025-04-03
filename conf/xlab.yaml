@@ -25,7 +25,7 @@ trainer:
         mode: min
         patience: 5
   max_epochs: 20
-  enable_model_summary: false  # prevents a warning that the callback is already configures
+  enable_model_summary: false  # prevents a warning that the callback is already configured
   deterministic: true
   benchmark: false
 model:

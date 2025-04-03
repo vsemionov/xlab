@@ -18,6 +18,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 import lightning as L
 
 from . import transformers
@@ -41,10 +42,10 @@ class XLabModule(L.LightningModule, ABC):
         ignore_index = self.pad_index if self.pad_index is not None else -1
         return F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=ignore_index)
 
-    # optimizers and lr schedulers are defined in configuration
-    # def configure_optimizers(self):
-    #     optimizer = optim.Adam(self.parameters(), lr=3e-4)
-    #     return optimizer
+    def configure_optimizers(self):
+        # optimizers and lr schedulers are defined in configuration, this is only a default
+        optimizer = optim.Adam(self.parameters(), lr=3e-4)
+        return optimizer
 
     def _step(self, batch, name, **metrics):
         x, targets = batch
