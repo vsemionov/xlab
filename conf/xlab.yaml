@@ -57,7 +57,7 @@ data:
   num_proc: 4
   progress: tqdm
   batch_size: 64
-  pin_memory: false
+  pin_memory: true
   num_workers: 4
   persistent_workers: false
 optimizer:
