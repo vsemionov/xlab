@@ -15,6 +15,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import lightning as L
@@ -24,6 +25,8 @@ from . import transformers
 
 class XLabModule(L.LightningModule, ABC):
     model: transformers.GenerativeTextTransformer
+
+    _show_shape_info = False
 
     @abstractmethod
     def __init__(self, pad_index: Optional[int]):
@@ -87,6 +90,8 @@ class XLabModel(XLabModule):
             activation=activation,
             attn_drop=attn_drop, ff_drop=ff_drop,
         )
+        if self._show_shape_info:
+            self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)
 
 
 class XLabPyTorchModel(XLabModule):
@@ -107,3 +112,5 @@ class XLabPyTorchModel(XLabModule):
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
         )
+        if self._show_shape_info:
+            self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)
