@@ -2,9 +2,12 @@ click
 datasets
 jsonargparse[signatures]
 lightning
+matplotlib
 numpy==1.26.4
+pandas
 platformdirs
 rich
+seaborn
 tensorboard
 torch==2.2.2
 torchtext

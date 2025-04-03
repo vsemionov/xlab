@@ -35,6 +35,8 @@ class TextDataset(data.Dataset):
             column: str = 'text',
             num_proc: int = 4, quiet: bool = False,
             progress: str = 'tqdm',
+            keep_text: bool = False,
+            keep_tokens: bool = False,
     ):
         super().__init__()
         self.quiet = quiet
@@ -42,6 +44,8 @@ class TextDataset(data.Dataset):
         self.num_proc = num_proc
         self.progress = progress
         self.tokenizer = tokenizer
+        self.keep_text = keep_text
+        self.keep_tokens = keep_tokens
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits)
         splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
@@ -72,8 +76,9 @@ class TextDataset(data.Dataset):
             row['tokens'] = tokenizer(row[column])
             return row
         column = self.column
+        remove_columns = [] if self.keep_text else [column]
         tokenizer = copy.copy(tokenizer).reset_vocab()  # discard vocabulary state to prevent cache misses
-        dataset = dataset.map(tokenize, remove_columns=[column], num_proc=self.num_proc, desc='Tokenizing')
+        dataset = dataset.map(tokenize, remove_columns=remove_columns, num_proc=self.num_proc, desc='Tokenizing')
         return dataset
 
     def _build_vocab(self, dataset, tokenizer):
@@ -84,7 +89,8 @@ class TextDataset(data.Dataset):
         def index(row):
             row['indices'] = tokenizer.index(row['tokens'])
             return row
-        dataset = dataset.map(index, remove_columns=['tokens'], num_proc=self.num_proc, desc='Indexing')
+        remove_columns = [] if self.keep_tokens else ['tokens']
+        dataset = dataset.map(index, remove_columns=remove_columns, num_proc=self.num_proc, desc='Indexing')
         return dataset
 
     def __len__(self):
