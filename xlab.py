@@ -59,5 +59,6 @@ def main():
 
     XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
 
+
 if __name__ == '__main__':
     main()
