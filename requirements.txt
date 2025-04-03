@@ -1,3 +1,4 @@
+click
 datasets
 jsonargparse[signatures]
 lightning
