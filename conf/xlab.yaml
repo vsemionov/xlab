@@ -27,7 +27,6 @@ trainer:
   max_epochs: 20
   enable_model_summary: false  # prevents a warning that the callback is already configured
   deterministic: true
-  benchmark: false
 model:
   max_len: 128
   d_model: 256
