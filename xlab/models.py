@@ -39,7 +39,7 @@ class XLabModule(L.LightningModule, ABC):
 
     # optimizers and lr schedulers are defined in configuration
     # def configure_optimizers(self):
-    #     optimizer = torch.optim.Adam(self.parameters(), lr=3e-4)
+    #     optimizer = optim.Adam(self.parameters(), lr=3e-4)
     #     return optimizer
 
     def _step(self, batch, name, **metrics):
