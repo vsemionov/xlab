@@ -215,25 +215,31 @@ class XLabDataModule(L.LightningDataModule):
         return data.DataLoader(
             self.datasets['val'],
             batch_size=self.batch_size,
+            shuffle=True,
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers,
+            generator=torch.Generator().manual_seed(42),
         )
 
     def test_dataloader(self):
         return data.DataLoader(
             self.datasets['test'],
             batch_size=self.batch_size,
+            shuffle=True,
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
+            generator=torch.Generator().manual_seed(42),
         )
 
     def predict_dataloader(self):
         return data.DataLoader(
             self.datasets['predict'],
             batch_size=self.batch_size,
+            shuffle=True,
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
+            generator=torch.Generator().manual_seed(42),
         )
 
     def state_dict(self):
