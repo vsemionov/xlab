@@ -45,10 +45,10 @@ data:
   path: wikipedia
   name: 20220301.simple
   splits:
-    train: 0.1
+    train: 0.9
     val: 0.05
-    test: 0.05
-    predict: 0.05
+    test: 0.025
+    predict: 0  # use remainder
   tokenizer: basic_english
   language: en
   max_tokens: 20_000

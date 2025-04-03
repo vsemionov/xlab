@@ -56,7 +56,10 @@ class TextDataset(data.Dataset):
         total = len(dataset)
         results = {}
         for name, size in splits.items():
-            split, dataset = dataset.train_test_split(train_size=int(size * total), seed=42).values()
+            if size > 0:
+                split, dataset = dataset.train_test_split(train_size=int(size * total), seed=42).values()
+            else:
+                split, dataset = dataset, []
             results[name] = split
         if not self.quiet:
             print(f'Splits: { {name: len(split) for name, split in results.items() } }')
