@@ -46,9 +46,9 @@ class XLabTQDMProgressBar(Progress, TQDMProgressBar):
 
 
 class XLabRichProgressBar(Progress, RichProgressBar):
-    def __init__(self):
+    def __init__(self, refresh_rate=1, leave=False):
         # workaround for failing config validation
-        super().__init__()
+        super().__init__(refresh_rate=refresh_rate, leave=leave)
 
 
 class LoggerSaveConfigCallback(SaveConfigCallback):
