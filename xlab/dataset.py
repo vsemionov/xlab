@@ -234,3 +234,9 @@ class XLabDataModule(L.LightningDataModule):
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
         )
+
+    def state_dict(self):
+        return {'vocab': self.tokenizer.vocab}
+
+    def load_state_dict(self, state_dict):
+        self.tokenizer.vocab = state_dict['vocab']
