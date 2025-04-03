@@ -61,7 +61,8 @@ class TextDataset(data.Dataset):
         results = {}
         for name, size in splits.items():
             if size > 0:
-                split, dataset = dataset.train_test_split(train_size=int(size * total), seed=42).values()
+                size = int(size * total) if isinstance(size, float) else size
+                split, dataset = dataset.train_test_split(train_size=size, seed=42).values()
             else:
                 split, dataset = dataset, []
             results[name] = split
@@ -105,7 +106,7 @@ class ChunkDataset(data.Dataset):
         super().__init__()
         self.dataset = dataset
         self.seq_len = seq_len
-        self.chunk_size = int(seq_len * chunk_size) if isinstance(chunk_size, float) else chunk_size
+        self.chunk_size = int(chunk_size * seq_len) if isinstance(chunk_size, float) else chunk_size
         assert 0 < self.chunk_size <= self.seq_len
         self.progress = progress
         self.index = self._chunk(dataset)
