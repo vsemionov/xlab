@@ -47,7 +47,7 @@ def main(checkpoint_path, prompt, device, limit, temperature, top_k, top_p, seed
     model.eval().requires_grad_(False)
 
     sos_index, eos_index = [tokenizer[token] for token in [tokenizer.sos_token, tokenizer.eos_token]]
-    indices = torch.tensor([sos_index] + tokenizer.encode(tokenizer(prompt)), device=model.device)
+    indices = torch.tensor([sos_index] + tokenizer.encode(prompt), device=model.device)
     max_len = model.hparams['max_len']
     generator = torch.Generator().manual_seed(seed) if seed is not None else None
 
@@ -64,7 +64,7 @@ def main(checkpoint_path, prompt, device, limit, temperature, top_k, top_p, seed
             output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
         )
 
-    output = tokenizer.decode(indices)
+    output = tokenizer.decode(indices.tolist())
     print(f'{prompt} {output}')
 
 
