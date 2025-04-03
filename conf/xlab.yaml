@@ -1,6 +1,6 @@
 seed_everything: 42
 trainer:
-  precision: 16-mixed  # 32 / 16-mixed
+  precision: 16-mixed  # 32 / 16-mixed / bf16-mixed
   logger:
     class_path: TensorBoardLogger
     init_args:
