@@ -1,6 +1,10 @@
 seed_everything: 42
 trainer:
-  precision: 16-mixed  # 32 / 16-mixed / bf16-mixed
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
   logger:
     class_path: TensorBoardLogger
     init_args:
@@ -16,13 +20,14 @@ trainer:
     - class_path: ModelCheckpoint
       init_args:
         monitor: val_loss
-        mode: min
         save_last: true
         save_top_k: 10
+        mode: min
     - class_path: EarlyStopping
       init_args:
         monitor: val_loss
         mode: min
+        min_delta: 0
         patience: 5
   max_epochs: 20
   enable_model_summary: false  # prevents a warning that the callback is already configured
@@ -70,6 +75,8 @@ lr_scheduler:
   init_args:
     monitor: val_loss
     mode: min
+    threshold: 1e-4
+    threshold_mode: rel
     factor: 0.1
     patience: 2
     min_lr: 1e-5
