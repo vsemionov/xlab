@@ -1,0 +1,28 @@
+seed_everything: 42
+trainer:
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: .
+  callbacks:
+    - class_path: RichModelSummary
+      init_args:
+        max_depth: 5
+    - XLabRichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+        monitor: val_loss
+        save_last: true
+        save_top_k: 10
+        mode: min
+  max_epochs: 20
+  enable_model_summary: false  # prevents a warning that the callback is already configured
+  deterministic: true
+optimizer:
+  class_path: Adam
+  init_args:
+    lr: 3e-4
+    weight_decay: 0.0

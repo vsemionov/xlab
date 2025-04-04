@@ -21,7 +21,6 @@ import torch
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar
 
-from xlab.config import APP_NAME
 from xlab.dataset import XLabDataModule
 from xlab.models import XLabModule, XLabModel
 
@@ -56,7 +55,7 @@ def main():
     multiprocessing.set_start_method('fork')  # needed on macos
     delattr(XLabModule, 'configure_optimizers')  # prevents a warning that method will be overridden by configuration
 
-    parser_kwargs = {stage: {'default_config_files': [Path(__file__).parent / 'conf' / f'{APP_NAME}.yaml']}
+    parser_kwargs = {stage: {'default_config_files': [Path(__file__).parent / 'conf' / f'defaults.yaml']}
         for stage in ['fit', 'validate', 'test', 'predict']}
 
     XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
