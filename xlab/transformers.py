@@ -178,7 +178,7 @@ class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
         self.register_buffer('causal_mask', causal_mask)
         self.reset_parameters()
 
-    def forward(self, x, seq_mask=None):
+    def forward(self, x, seq_mask=None):  # noqa
         n = x.size(1)
         mask = self.causal_mask[:n, :n] if self.causal_mask is not None else None
         return super().forward(x, mask=mask, src_key_padding_mask=seq_mask, is_causal=(mask is not None))
