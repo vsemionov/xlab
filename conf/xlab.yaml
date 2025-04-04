@@ -29,7 +29,7 @@ data:
     predict: 0  # use remainder
   tokenizer: basic_english
   language: en
-  max_tokens: 20_000
+  max_tokens: 32768
   column: text
   num_proc: 4
   progress: tqdm
