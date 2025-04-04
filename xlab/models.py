@@ -77,7 +77,7 @@ class XLabModel(XLabModule):
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = transformers.PositionalEncoding,
-            n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
+            n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
             attn_drop: bool = True, ff_drop: bool = True,
@@ -86,7 +86,7 @@ class XLabModel(XLabModule):
         self.model = transformers.GenerativeTextTransformer(
             n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
             position=position, encoder=transformers.TransformerEncoder,
-            n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
+            n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
             attn_drop=attn_drop, ff_drop=ff_drop,
@@ -101,7 +101,7 @@ class XLabPyTorchModel(XLabModule):
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = transformers.PositionalEncoding,
-            n_blocks: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
+            n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
     ):
@@ -109,7 +109,7 @@ class XLabPyTorchModel(XLabModule):
         self.model = transformers.GenerativeTextTransformer(
             n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
             position=position, encoder=transformers.PyTorchTransformerEncoder,
-            n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
+            n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
         )

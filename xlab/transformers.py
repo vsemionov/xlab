@@ -99,7 +99,7 @@ class MultiHeadSelfAttention(nn.Module):
         return y
 
 
-class TransformerBlock(nn.Module):
+class TransformerLayer(nn.Module):
     def __init__(self, d_model, n_heads, d_ff, prenorm=False, norm=nn.LayerNorm, activation=nn.ReLU(),
             dropout=0.1, attn_drop=True, ff_drop=True):
         # attn_drop and ff_drop are true to match the pytorch implementation, deviating from the original paper
@@ -132,11 +132,11 @@ class ParameterInit:
 
 
 class TransformerEncoder(nn.Module, ParameterInit):
-    def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, postnorm=False, norm=nn.LayerNorm,
+    def __init__(self, max_len, d_model, n_layers, n_heads, d_ff, postnorm=False, norm=nn.LayerNorm,
             causal=False, **kwargs):
         super().__init__()
-        self.blocks = nn.ModuleList([TransformerBlock(d_model, n_heads, d_ff, norm=norm, **kwargs)
-            for _ in range(n_blocks)])
+        self.layers = nn.ModuleList([TransformerLayer(d_model, n_heads, d_ff, norm=norm, **kwargs)
+            for _ in range(n_layers)])
         self.norm = norm(d_model) if postnorm else None
         causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1) if causal else None
         self.register_buffer('causal_mask', causal_mask, persistent=False)
@@ -144,8 +144,8 @@ class TransformerEncoder(nn.Module, ParameterInit):
 
     def forward(self, x, seq_mask=None):
         mask = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
-        for block in self.blocks:
-            x = block(x, mask=mask)
+        for layer in self.layers:
+            x = layer(x, mask=mask)
         if self.norm:
             x = self.norm(x)
         return x
@@ -168,13 +168,13 @@ class TransformerEncoder(nn.Module, ParameterInit):
 
 
 class PyTorchTransformerEncoder(nn.Module, ParameterInit):
-    def __init__(self, max_len, d_model, n_blocks, n_heads, d_ff, prenorm=False, postnorm=False, norm=nn.LayerNorm,
+    def __init__(self, max_len, d_model, n_layers, n_heads, d_ff, prenorm=False, postnorm=False, norm=nn.LayerNorm,
             causal=False, dropout=0.1, **kwargs):
         super().__init__()
         kwargs = dict(dropout=dropout, norm_first=prenorm, batch_first=True, **kwargs)
         encoder_layer = nn.TransformerEncoderLayer(d_model, n_heads, d_ff, **kwargs)
         encoder_norm = norm(d_model) if postnorm else None
-        self.encoder = nn.TransformerEncoder(encoder_layer, n_blocks, norm=encoder_norm)
+        self.encoder = nn.TransformerEncoder(encoder_layer, n_layers, norm=encoder_norm)
         causal_mask = nn.Transformer.generate_square_subsequent_mask(max_len) if causal else None
         self.register_buffer('causal_mask', causal_mask)
         self.reset_parameters()
@@ -188,11 +188,11 @@ class PyTorchTransformerEncoder(nn.Module, ParameterInit):
 
 class Transformer(nn.Module):
     def __init__(self, position=PositionalEncoding, encoder=TransformerEncoder,
-            max_len=128, d_model=128, n_blocks=2, n_heads=2, d_ff=256, dropout=0.1, **kwargs):
+            max_len=128, d_model=128, n_layers=2, n_heads=2, d_ff=256, dropout=0.1, **kwargs):
         super().__init__()
         self.position = position(max_len, d_model)
         self.dropout = nn.Dropout(dropout)
-        self.encoder = encoder(max_len, d_model, n_blocks, n_heads, d_ff, dropout=dropout, **kwargs)
+        self.encoder = encoder(max_len, d_model, n_layers, n_heads, d_ff, dropout=dropout, **kwargs)
 
     def forward(self, x, seq_mask=None):
         x = x + self.position(x).unsqueeze(0)
