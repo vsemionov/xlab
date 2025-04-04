@@ -146,7 +146,7 @@ class TransformerDecoder(nn.Module, ParameterInit):
         mask = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
         for layer in self.layers:
             x = layer(x, mask=mask)
-        if self.norm:
+        if self.norm is not None:
             x = self.norm(x)
         return x
 
