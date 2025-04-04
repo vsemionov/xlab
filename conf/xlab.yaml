@@ -8,7 +8,7 @@ trainer:
 model:
   max_len: 128
   d_model: 512
-  position: xlab.transformers.PositionalEncoding
+  position: xlab.transformers.PositionalEmbedding
   n_layers: 6
   n_heads: 8
   d_ff: 2048
