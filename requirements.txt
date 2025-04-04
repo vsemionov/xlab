@@ -1,6 +1,7 @@
 click
 datasets
 jsonargparse[signatures]
+jupyter
 lightning
 matplotlib
 numpy==1.26.4
