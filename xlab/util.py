@@ -29,8 +29,8 @@ def progress_bar(iterable, kind='tqdm', desc='Working'):
         assert False
 
 
-def get_cache_dir():
-    return platformdirs.user_cache_path(config.APP_NAME, ensure_exists=True)
+def get_cache_dir(ensure_exists=True):
+    return platformdirs.user_cache_path(config.APP_NAME, ensure_exists=ensure_exists)
 
 
 def cached(function, name, fingerprint):
