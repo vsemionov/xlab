@@ -161,7 +161,7 @@ class XLabDataModule(L.LightningDataModule):
             progress: str = 'tqdm',
             seq_len: int = 128,
             chunk_size: Union[float, int] = 0.5,
-            batch_size: int = 32, pin_memory: bool = False, num_workers: int = 4, persistent_workers: bool = False,
+            batch_size: int = 128, pin_memory: bool = False, num_workers: int = 4, persistent_workers: bool = False,
     ):
         super().__init__()
         self.save_hyperparameters()
