@@ -9,8 +9,8 @@ model:
   max_len: 128
   d_model: 256
   position: xlab.transformers.PositionalEncoding
-  n_blocks: 4
-  n_heads: 4
+  n_blocks: 8
+  n_heads: 8
   d_ff: 512
   dropout: 0.1
   prenorm: false
