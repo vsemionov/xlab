@@ -85,7 +85,7 @@ class XLabModel(XLabModule):
         super().__init__(pad_index)
         self.model = transformers.GenerativeTextTransformer(
             n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
-            position=position, decoder=transformers.TransformerDecoder,
+            position=position, encoder=transformers.TransformerEncoder,
             n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
@@ -108,7 +108,7 @@ class XLabPyTorchModel(XLabModule):
         super().__init__(pad_index)
         self.model = transformers.GenerativeTextTransformer(
             n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
-            position=position, decoder=transformers.PyTorchTransformerDecoder,
+            position=position, encoder=transformers.PyTorchTransformerEncoder,
             n_blocks=n_blocks, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
