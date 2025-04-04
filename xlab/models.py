@@ -47,23 +47,24 @@ class XLabModule(L.LightningModule, ABC):
         optimizer = optim.Adam(self.parameters(), lr=3e-4)
         return optimizer
 
-    def _step(self, batch, name, **metrics):
+    def _step(self, batch, name, sync_dist=False):
         x, targets = batch
         logits = self(x)
         loss = self.loss(logits, targets)
         correct = (logits.detach().argmax(dim=2) == targets).sum().item()
         accuracy = correct / targets.numel()
-        self.log_dict({f'{name}_loss': loss, f'{name}_accuracy': accuracy, **metrics}, prog_bar=True)
+        log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
+        self.log_dict(log_data, prog_bar=True, sync_dist=sync_dist)
         return loss
 
     def training_step(self, batch, batch_idx):
         return self._step(batch, 'train')
 
     def validation_step(self, batch, batch_idx):
-        return self._step(batch, 'val')
+        return self._step(batch, 'val', sync_dist=True)
 
     def test_step(self, batch, batch_idx):
-        return self._step(batch, 'test')
+        return self._step(batch, 'test', sync_dist=True)
 
     def predict_step(self, batch, batch_idx):
         x, _ = batch
