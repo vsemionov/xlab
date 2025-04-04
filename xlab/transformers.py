@@ -167,14 +167,13 @@ class TransformerDecoder(nn.Module, ParameterInit):
         return causal_mask | seq_mask
 
 
-class PyTorchTransformerDecoder(nn.Module, ParameterInit):
+class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
     def __init__(self, max_len, d_model, n_layers, n_heads, d_ff, prenorm=False, postnorm=False, norm=nn.LayerNorm,
             causal=False, dropout=0.1, **kwargs):
-        super().__init__()
         kwargs = dict(dropout=dropout, norm_first=prenorm, batch_first=True, **kwargs)
         layer = nn.TransformerEncoderLayer(d_model, n_heads, d_ff, **kwargs)
         norm = norm(d_model) if postnorm else None
-        self.decoder = nn.TransformerEncoder(layer, n_layers, norm=norm)
+        super().__init__(layer, n_layers, norm=norm)
         causal_mask = nn.Transformer.generate_square_subsequent_mask(max_len) if causal else None
         self.register_buffer('causal_mask', causal_mask)
         self.reset_parameters()
@@ -182,8 +181,7 @@ class PyTorchTransformerDecoder(nn.Module, ParameterInit):
     def forward(self, x, seq_mask=None):
         n = x.size(1)
         mask = self.causal_mask[:n, :n] if self.causal_mask is not None else None
-        x = self.decoder(x, mask=mask, src_key_padding_mask=seq_mask, is_causal=(mask is not None))
-        return x
+        return super().forward(x, mask=mask, src_key_padding_mask=seq_mask, is_causal=(mask is not None))
 
 
 class Transformer(nn.Module):
