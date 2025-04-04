@@ -44,6 +44,8 @@ def main(
         beam_search, beam_width, length_penalty,
         debug
 ):
+    """Model inference"""
+
     if device == 'auto':
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
