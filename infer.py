@@ -57,25 +57,30 @@ def main(
     model.eval().requires_grad_(False)
 
     sos_index, eos_index = [tokenizer[token] for token in [tokenizer.sos_token, tokenizer.eos_token]]
-    indices = torch.tensor([sos_index] + tokenizer.encode(prompt), device=model.device)
+    inputs = torch.tensor([sos_index] + tokenizer.encode(prompt), device=model.device)
     max_len = model.hparams['max_len']
     generator = torch.Generator().manual_seed(seed) if seed is not None else None
 
     if not beam_search:
         indices = inference.sample(
-            model, indices,
+            model, inputs,
             temperature=temperature, top_k=top_k, top_p=top_p, generator=generator,
             output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
         )
     else:
         indices = inference.beam_search(
-            model, indices,
+            model, inputs,
             beam_width=beam_width, length_penalty=length_penalty,
             output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
         )
 
-    output = tokenizer.decode(indices.tolist())
-    print(f'{prompt} {output}')
+    inputs = tokenizer.decode(inputs[1:].tolist())
+    indices = indices.tolist()
+    if len(indices) < limit:
+        indices.append(eos_index)
+    output = tokenizer.decode(indices)
+    sep = ' ' if inputs else ''
+    print(f'{prompt}{sep}{output}')
 
 
 if __name__ == '__main__':
