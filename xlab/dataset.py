@@ -23,7 +23,7 @@ import lightning as L
 import datasets
 
 from .tokenizer import Tokenizer
-from .util import progress_bar, get_cache_dir
+from .util import progress_bar, cached, fingerprint
 
 
 class TextDataset(data.Dataset):
@@ -49,8 +49,8 @@ class TextDataset(data.Dataset):
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits)
         splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
-        if not tokenizer.has_vocab():
-            self._build_vocab(splits['train'], tokenizer)
+        train_set = splits['train']
+        tokenizer.vocab = cached(lambda: self._build_vocab(train_set, tokenizer), 'vocab', fingerprint(train_set))
         splits = {name: self._index(split, tokenizer) for name, split in splits.items()}
         self.dataset = splits[split].with_format('numpy', columns=['indices'], output_all_columns=True)
 
@@ -84,7 +84,7 @@ class TextDataset(data.Dataset):
 
     def _build_vocab(self, dataset, tokenizer):
         batches = (sample['tokens'] for sample in progress_bar(dataset, kind=self.progress, desc='Building vocabulary'))
-        tokenizer.build_vocab(batches)
+        return tokenizer.build_vocab(batches).vocab
 
     def _index(self, dataset, tokenizer):
         def index(row):
@@ -109,7 +109,7 @@ class ChunkDataset(data.Dataset):
         self.chunk_size = int(chunk_size * seq_len) if isinstance(chunk_size, float) else chunk_size
         assert 0 < self.chunk_size <= self.seq_len
         self.progress = progress
-        self.index = self._chunk(dataset)
+        self.index = cached(lambda: self._chunk(dataset), 'index', fingerprint(dataset.dataset))
 
     def _chunk(self, dataset):
         index = []
@@ -178,10 +178,9 @@ class XLabDataModule(L.LightningDataModule):
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
         self.datasets = {}
-        self._vocab_cache_path = get_cache_dir() / 'vocab.pt'
 
-    def _text_dataset(self, split, **kwargs):
-        return TextDataset(
+    def _dataset(self, split, **kwargs):
+        text_dataset = TextDataset(
             path=self.path, name=self.name,
             splits=self.splits, split=split,
             tokenizer=self.tokenizer,
@@ -190,17 +189,18 @@ class XLabDataModule(L.LightningDataModule):
             progress=self.progress,
             **kwargs
         )
-
-    def _dataset(self, split, **kwargs):
-        text_dataset = self._text_dataset(split, **kwargs)
-        return ChunkDataset(text_dataset, seq_len=self.seq_len, chunk_size=self.chunk_size, progress=self.progress)
+        chunk_dataset = ChunkDataset(
+            text_dataset,
+            seq_len=self.seq_len, chunk_size=self.chunk_size, progress=self.progress,
+        )
+        return chunk_dataset
 
     def prepare_data(self):
-        self._text_dataset('train')
-        self.tokenizer.save_vocab(self._vocab_cache_path)
+        self._dataset('train')
+        for split in ['val', 'test', 'predict']:
+            self._dataset(split, quiet=True)
 
     def setup(self, stage):
-        self.tokenizer.load_vocab(self._vocab_cache_path)
         kwargs = dict(quiet=True)
         if stage == 'fit':
             self.datasets['train'] = self._dataset('train', **kwargs)

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import torch
 import platformdirs
 from tqdm.auto import tqdm
 from rich.progress import track
@@ -30,3 +31,19 @@ def progress_bar(iterable, kind='tqdm', desc='Working'):
 
 def get_cache_dir():
     return platformdirs.user_cache_path(config.APP_NAME, ensure_exists=True)
+
+
+def cached(function, name, fingerprint):
+    cache_dir = get_cache_dir()
+    path = cache_dir / name / f'{fingerprint}.pt'
+    try:
+        result = torch.load(path)
+    except FileNotFoundError:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        result = function()
+        torch.save(result, path)
+    return result
+
+
+def fingerprint(dataset):
+    return dataset._fingerprint
