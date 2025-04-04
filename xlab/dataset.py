@@ -49,8 +49,9 @@ class TextDataset(data.Dataset):
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits)
         splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
-        train_set = splits['train']
-        tokenizer.vocab = cached(lambda: self._build_vocab(train_set, tokenizer), 'vocab', fingerprint(train_set))
+        if tokenizer.vocab is None:
+            train_set = splits['train']
+            tokenizer.vocab = cached(lambda: self._build_vocab(train_set, tokenizer), 'vocab', fingerprint(train_set))
         splits = {name: self._index(split, tokenizer) for name, split in splits.items()}
         self.dataset = splits[split].with_format('numpy', columns=['indices'], output_all_columns=True)
 
@@ -195,24 +196,24 @@ class XLabDataModule(L.LightningDataModule):
         )
         return chunk_dataset
 
+    def _load_dataset(self, split, **kwargs):
+        if split not in self.datasets:
+            self.datasets[split] = self._dataset(split, **kwargs)
+
     def prepare_data(self):
         self._dataset('train')
         for split in ['val', 'test', 'predict']:
-            self._dataset(split, quiet=True)
+            self.datasets[split] = self._dataset(split, quiet=True)
 
     def setup(self, stage):
-        kwargs = dict(quiet=True)
-        if stage == 'fit':
-            self.datasets['train'] = self._dataset('train', **kwargs)
-            self.datasets['val'] = self._dataset('val', **kwargs)
-        elif stage == 'validate':
-            self.datasets['val'] = self._dataset('val', **kwargs)
-        elif stage == 'test':
-            self.datasets['test'] = self._dataset('test', **kwargs)
-        elif stage == 'predict':
-            self.datasets['predict'] = self._dataset('predict', **kwargs)
-        else:
-            assert False
+        splits = {
+            'fit': ['train', 'val'],
+            'validate': ['val'],
+            'test': ['test'],
+            'predict': ['predict'],
+        }
+        for split in splits[stage]:
+            self._load_dataset(split, quiet=True)
 
     def train_dataloader(self):
         return data.DataLoader(
