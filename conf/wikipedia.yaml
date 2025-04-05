@@ -1,5 +1,5 @@
 trainer:
-  val_check_interval: 0.25
+  val_check_interval: 0.2
 data:
   path: wikimedia/wikipedia
   name: 20231101.en
