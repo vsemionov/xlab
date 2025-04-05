@@ -103,7 +103,12 @@ class TextDataset(data.Dataset):
 
 
 class ChunkDataset(data.Dataset):
-    def __init__(self, dataset: TextDataset, seq_len: int, chunk_size: Union[float, int] = 0.5, progress: str = 'tqdm'):
+    def __init__(
+            self,
+            dataset: TextDataset,
+            seq_len: int, chunk_size: Union[float, int] = 0.5,
+            progress: str = 'tqdm'
+    ):
         super().__init__()
         self.dataset = dataset
         self.seq_len = seq_len
@@ -195,7 +200,8 @@ class XLabDataModule(L.LightningDataModule):
         )
         chunk_dataset = ChunkDataset(
             text_dataset,
-            seq_len=self.seq_len, chunk_size=self.chunk_size, progress=self.progress,
+            seq_len=self.seq_len, chunk_size=self.chunk_size,
+            progress=self.progress,
         )
         return chunk_dataset
 
