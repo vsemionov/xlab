@@ -128,7 +128,7 @@ class ChunkDataset(data.Dataset):
         dataset = self.dataset
         tokenizer = dataset.tokenizer
         window = self.seq_len + 1
-        ds_idx, start_idx = self.index[idx]
+        ds_idx, start_idx = self.index[idx].tolist()
         end_idx = start_idx + window
         indices = dataset[ds_idx]
         if start_idx > 0:
