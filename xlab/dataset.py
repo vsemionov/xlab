@@ -202,7 +202,7 @@ class XLabDataModule(L.LightningDataModule):
             self.datasets[split] = self._dataset(split, **kwargs)
 
     def prepare_data(self):
-        self._dataset('train')
+        self.datasets['train'] = self._dataset('train')
         for split in ['val', 'test', 'predict']:
             self.datasets[split] = self._dataset(split, quiet=True)
 
