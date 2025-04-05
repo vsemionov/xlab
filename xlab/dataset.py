@@ -217,6 +217,7 @@ class XLabDataModule(L.LightningDataModule):
             'test': ['test'],
             'predict': ['predict'],
         }
+        self.datasets = {split: dataset for split, dataset in self.datasets.items() if split in splits[stage]}
         for split in splits[stage]:
             if split not in self.datasets:
                 self.datasets[split] = self._dataset(split, quiet=True)
