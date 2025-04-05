@@ -43,7 +43,3 @@ def cached(function, name, fingerprint):
         result = function()
         torch.save(result, path)
     return result
-
-
-def fingerprint(dataset):
-    return dataset._fingerprint

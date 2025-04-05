@@ -24,7 +24,22 @@ import datasets
 from joblib import Parallel, delayed
 
 from .tokenizer import Tokenizer
-from .util import progress_bar, cached, fingerprint
+from .util import progress_bar, cached
+
+
+def fingerprint(dataset):
+    return dataset._fingerprint
+
+
+def parallelize(dataset, n_jobs=-1):
+    batch_size = 1000
+    parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer='threads')
+    batches = parallel(
+        delayed(dataset.__getitem__)(slice(start, start + batch_size))
+        for start in range(0, len(dataset), batch_size)
+    )
+    samples = (sample for batch in batches for sample in batch)
+    return samples
 
 
 class TextDataset(data.Dataset):
@@ -85,7 +100,8 @@ class TextDataset(data.Dataset):
         return dataset
 
     def _build_vocab(self, dataset, tokenizer):
-        batches = (sample['tokens'] for sample in progress_bar(dataset, kind=self.progress, desc='Building vocabulary'))
+        samples = parallelize(dataset, n_jobs=self.num_proc)
+        batches = (sample['tokens'] for sample in progress_bar(samples, kind=self.progress, desc='Building vocabulary'))
         return tokenizer.build_vocab(batches).vocab
 
     def _index(self, dataset, tokenizer):
@@ -122,15 +138,8 @@ class ChunkDataset(data.Dataset):
 
     def _chunk(self, dataset):
         index = []
-        total = len(dataset)
-        parallel = Parallel(n_jobs=self.num_proc, return_as='generator', prefer='threads')
-        batch_size = 1000
-        batches = parallel(
-            delayed(dataset.__getitem__)(slice(start, start + batch_size))
-            for start in range(0, total, batch_size)
-        )
-        items = (item for batch in batches for item in batch)
-        for i, indices in enumerate(progress_bar(items, kind=self.progress, total=total, desc='Chunking')):
+        samples = parallelize(dataset, n_jobs=self.num_proc)
+        for i, indices in enumerate(progress_bar(samples, kind=self.progress, total=len(dataset), desc='Chunking')):
             # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
             n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
             index.extend([(i, j * self.chunk_size) for j in range(n_chunks)])
