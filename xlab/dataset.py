@@ -118,6 +118,7 @@ class ChunkDataset(data.Dataset):
             # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
             n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
             index.extend([(i, j * self.chunk_size) for j in range(n_chunks)])
+        index = np.array(index)
         return index
 
     def __len__(self):
