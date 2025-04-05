@@ -31,14 +31,14 @@ def fingerprint(dataset):
     return dataset._fingerprint
 
 
-def parallelize(dataset, n_jobs=-1):
+def parallelize(dataset, column=None, n_jobs=-1):
     batch_size = 1000
     parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer='threads')
     batches = parallel(
         delayed(dataset.__getitem__)(slice(start, start + batch_size))
         for start in range(0, len(dataset), batch_size)
     )
-    samples = (sample for batch in batches for sample in batch)
+    samples = (sample for batch in batches for sample in (batch[column] if column is not None else batch))
     return samples
 
 
@@ -100,11 +100,8 @@ class TextDataset(data.Dataset):
         return dataset
 
     def _build_vocab(self, dataset, tokenizer):
-        samples = parallelize(dataset, n_jobs=self.num_proc)
-        batches = (
-            sample['tokens']
-            for sample in progress_bar(samples, kind=self.progress, total=len(dataset), desc='Building vocabulary')
-        )
+        samples = parallelize(dataset, column='tokens', n_jobs=self.num_proc)
+        batches = progress_bar(samples, kind=self.progress, total=len(dataset), desc='Building vocabulary')
         return tokenizer.build_vocab(batches).vocab
 
     def _index(self, dataset, tokenizer):
