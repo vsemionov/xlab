@@ -20,11 +20,11 @@ from rich.progress import track
 from . import config
 
 
-def progress_bar(iterable, kind='tqdm', desc='Working'):
+def progress_bar(iterable, kind='tqdm', total=None, desc='Working'):
     if kind == 'tqdm':
-        return tqdm(iterable, desc=desc)
+        return tqdm(iterable, total=total, desc=desc)
     elif kind == 'rich':
-        return track(iterable, description=desc)
+        return track(iterable, total=total, description=desc)
     else:
         assert False
 
