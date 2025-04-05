@@ -6,7 +6,7 @@ trainer:
   precision: 16-mixed
   max_epochs: 20
 model:
-  max_len: 128
+  max_len: 256
   d_model: 512
   position: xlab.transformers.PositionalEncoding
   n_layers: 6
@@ -34,7 +34,7 @@ data:
   num_proc: 4
   progress: tqdm
   chunk_size: 0.5
-  batch_size: 256
+  batch_size: 128
   pin_memory: true
   num_workers: 4
   persistent_workers: true
