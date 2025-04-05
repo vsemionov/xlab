@@ -17,6 +17,12 @@ trainer:
         save_last: true
         save_top_k: 10
         mode: min
+#    - class_path: EarlyStopping
+#      init_args:
+#        monitor: val_loss
+#        min_delta: 0
+#        patience: 5
+#        mode: min
   max_epochs: 20
   enable_model_summary: false  # prevents a warning that the callback is already configured
   deterministic: true
