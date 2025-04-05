@@ -123,8 +123,13 @@ class ChunkDataset(data.Dataset):
     def _chunk(self, dataset):
         index = []
         total = len(dataset)
-        parallel = Parallel(n_jobs=self.num_proc, return_as='generator')
-        items = parallel(delayed(dataset.__getitem__)(i) for i in range(total))
+        parallel = Parallel(n_jobs=self.num_proc, return_as='generator', prefer='threads')
+        batch_size = 1000
+        batches = parallel(
+            delayed(dataset.__getitem__)(slice(start, start + batch_size))
+            for start in range(0, total, batch_size)
+        )
+        items = (item for batch in batches for item in batch)
         for i, indices in enumerate(progress_bar(items, kind=self.progress, total=total, desc='Chunking')):
             # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
             n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
