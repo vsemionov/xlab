@@ -4,6 +4,7 @@ trainer:
     class_path: TensorBoardLogger
     init_args:
       save_dir: .
+      name: logs
   callbacks:
     - class_path: RichModelSummary
       init_args:
