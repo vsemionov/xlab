@@ -118,7 +118,9 @@ class ChunkDataset(data.Dataset):
             # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
             n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
             index.extend([(i, j * self.chunk_size) for j in range(n_chunks)])
-        index = np.array(index)
+        # use smaller dtypes to save memory; can be further optimized by using a separate array for the small 2nd index
+        dtype = np.uint32 if len(dataset) < 2**32 else np.uint64
+        index = np.array(index, dtype=dtype)
         return index
 
     def __len__(self):
