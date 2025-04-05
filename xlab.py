@@ -19,8 +19,10 @@ import multiprocessing
 
 import torch
 from lightning.pytorch.cli import LightningCLI
-from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar
+from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar, RichModelSummary
+from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 
+from xlab.config import THEME_COLOR
 from xlab.dataset import XLabDataModule
 from xlab.models import XLabModule, XLabModel
 
@@ -47,7 +49,17 @@ class XLabTQDMProgressBar(Progress, TQDMProgressBar):
 class XLabRichProgressBar(Progress, RichProgressBar):
     def __init__(self, refresh_rate=1, leave=False):
         # workaround for failing config validation
-        super().__init__(refresh_rate=refresh_rate, leave=leave)
+        theme = RichProgressBarTheme(
+            progress_bar=THEME_COLOR,
+            progress_bar_finished=THEME_COLOR,
+            progress_bar_pulse=THEME_COLOR
+        )
+        super().__init__(refresh_rate=refresh_rate, leave=leave, theme=theme)
+
+
+class XLabRichModelSummary(RichModelSummary):
+    def __init__(self, max_depth: int = 1):
+        super().__init__(max_depth=max_depth, header_style='bold')
 
 
 def main():

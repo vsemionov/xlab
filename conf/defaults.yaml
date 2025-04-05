@@ -6,7 +6,7 @@ trainer:
       save_dir: .
       name: logs
   callbacks:
-    - class_path: RichModelSummary
+    - class_path: XLabRichModelSummary
       init_args:
         max_depth: 5
     - XLabRichProgressBar
