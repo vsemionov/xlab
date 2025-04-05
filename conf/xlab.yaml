@@ -6,7 +6,7 @@ trainer:
   precision: 16-mixed
   max_epochs: 20
 model:
-  max_len: 256
+  max_len: 128
   d_model: 512
   position: xlab.transformers.PositionalEncoding
   n_layers: 6
