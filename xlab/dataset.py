@@ -21,6 +21,7 @@ import torch
 import torch.utils.data as data
 import lightning as L
 import datasets
+from joblib import Parallel, delayed
 
 from .tokenizer import Tokenizer
 from .util import progress_bar, cached, fingerprint
@@ -107,6 +108,7 @@ class ChunkDataset(data.Dataset):
             self,
             dataset: TextDataset,
             seq_len: int, chunk_size: Union[float, int] = 0.5,
+            num_proc: int = 4,
             progress: str = 'tqdm'
     ):
         super().__init__()
@@ -114,12 +116,16 @@ class ChunkDataset(data.Dataset):
         self.seq_len = seq_len
         self.chunk_size = int(chunk_size * seq_len) if isinstance(chunk_size, float) else chunk_size
         assert 0 < self.chunk_size <= self.seq_len
+        self.num_proc = num_proc
         self.progress = progress
         self.index = cached(lambda: self._chunk(dataset), 'index', fingerprint(dataset.dataset))
 
     def _chunk(self, dataset):
         index = []
-        for i, indices in enumerate(progress_bar(dataset, kind=self.progress, desc='Chunking')):
+        total = len(dataset)
+        parallel = Parallel(n_jobs=self.num_proc, return_as='generator')
+        items = parallel(delayed(dataset.__getitem__)(i) for i in range(total))
+        for i, indices in enumerate(progress_bar(items, kind=self.progress, total=total, desc='Chunking')):
             # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
             n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
             index.extend([(i, j * self.chunk_size) for j in range(n_chunks)])
@@ -201,6 +207,7 @@ class XLabDataModule(L.LightningDataModule):
         chunk_dataset = ChunkDataset(
             text_dataset,
             seq_len=self.seq_len, chunk_size=self.chunk_size,
+            num_proc=self.num_proc,
             progress=self.progress,
         )
         return chunk_dataset

@@ -1,5 +1,6 @@
 click
 datasets
+joblib
 jsonargparse[signatures]
 jupyter
 lightning
