@@ -205,10 +205,6 @@ class XLabDataModule(L.LightningDataModule):
         )
         return chunk_dataset
 
-    def _load_dataset(self, split, **kwargs):
-        if split not in self.datasets:
-            self.datasets[split] = self._dataset(split, **kwargs)
-
     def prepare_data(self):
         self.datasets['train'] = self._dataset('train')
         for split in ['val', 'test', 'predict']:
@@ -222,7 +218,8 @@ class XLabDataModule(L.LightningDataModule):
             'predict': ['predict'],
         }
         for split in splits[stage]:
-            self._load_dataset(split, quiet=True)
+            if split not in self.datasets:
+                self.datasets[split] = self._dataset(split, quiet=True)
 
     def train_dataloader(self):
         return data.DataLoader(
