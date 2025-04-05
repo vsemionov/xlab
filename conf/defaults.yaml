@@ -10,7 +10,7 @@ trainer:
       init_args:
         max_depth: 5
     - XLabRichProgressBar
-    - class_path: LearningRateMonitor
+    - LearningRateMonitor
     - class_path: ModelCheckpoint
       init_args:
         monitor: val_loss
