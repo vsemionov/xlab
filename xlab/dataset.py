@@ -101,7 +101,10 @@ class TextDataset(data.Dataset):
 
     def _build_vocab(self, dataset, tokenizer):
         samples = parallelize(dataset, n_jobs=self.num_proc)
-        batches = (sample['tokens'] for sample in progress_bar(samples, kind=self.progress, desc='Building vocabulary'))
+        batches = (
+            sample['tokens']
+            for sample in progress_bar(samples, kind=self.progress, total=len(dataset), desc='Building vocabulary')
+        )
         return tokenizer.build_vocab(batches).vocab
 
     def _index(self, dataset, tokenizer):
