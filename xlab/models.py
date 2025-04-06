@@ -81,11 +81,6 @@ class XLabModule(L.LightningModule, ABC):
             norms = grad_norm(self, norm_type=2)
             self.log_dict(norms)
 
-    def on_after_backward(self):
-        if self.debug and self.trainer.precision == 16:
-            scale = self.trainer.precision_plugin.scaler.get_scale()
-            self.log('grad_scale', scale)
-
 
 class XLabModel(XLabModule):
     """XLab model"""
