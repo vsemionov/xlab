@@ -4,7 +4,6 @@ trainer:
   devices: auto
   num_nodes: 1
   precision: 16-mixed
-  max_epochs: 20
   val_check_interval: 0.2
 model:
   max_len: 256
