@@ -5,6 +5,7 @@ trainer:
     init_args:
       save_dir: .
       name: logs
+      default_hp_metric: False
   callbacks:
     - class_path: XLabRichModelSummary
       init_args:
