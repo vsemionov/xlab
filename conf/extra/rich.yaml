@@ -1,0 +1,6 @@
+trainer:
+  callbacks:
+    - class_path: XLabRichModelSummary
+      init_args:
+        max_depth: 5
+    - XLabRichProgressBar
