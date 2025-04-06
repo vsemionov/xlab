@@ -13,11 +13,9 @@
 # limitations under the License.
 
 import re
-from pathlib import Path
-from typing import Optional, Union, Iterable
+from typing import Optional, Iterable
 import warnings
 
-import torch
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import Vocab, build_vocab_from_iterator
 
