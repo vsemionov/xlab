@@ -31,9 +31,10 @@ def fingerprint(dataset):
     return dataset._fingerprint
 
 
-def parallelize(dataset, column=None, n_jobs=-1):
+def parallelize(dataset, column=None, n_jobs=1, threaded=False):
     batch_size = 1000
-    parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer='threads')
+    prefer = 'threads' if threaded else 'processes'
+    parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer=prefer)
     batches = parallel(
         delayed(dataset.__getitem__)(slice(start, start + batch_size))
         for start in range(0, len(dataset), batch_size)
@@ -138,7 +139,7 @@ class ChunkDataset(data.Dataset):
 
     def _chunk(self, dataset):
         index = []
-        samples = parallelize(dataset, n_jobs=self.num_proc)
+        samples = parallelize(dataset, n_jobs=self.num_proc, threaded=True)
         for i, indices in enumerate(progress_bar(samples, kind=self.progress, total=len(dataset), desc='Chunking')):
             # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
             n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
