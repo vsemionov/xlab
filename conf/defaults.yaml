@@ -24,7 +24,7 @@ trainer:
 #        min_delta: 0
 #        patience: 5
 #        mode: min
-  max_epochs: -1
+  max_epochs: 20
   enable_model_summary: false  # prevents a warning that the callback is already configured
   deterministic: true
 optimizer:
