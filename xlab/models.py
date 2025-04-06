@@ -20,6 +20,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import lightning as L
+from lightning.pytorch.plugins import MixedPrecision
 from lightning.pytorch.utilities import grad_norm
 
 from . import transformers
@@ -75,6 +76,11 @@ class XLabModule(L.LightningModule, ABC):
         x, _ = batch
         y = self(x)
         return y
+
+    def on_after_backward(self):
+        if self.debug and isinstance(self.trainer.precision_plugin, MixedPrecision):
+            scale = self.trainer.precision_plugin.scaler.get_scale()
+            self.log('grad_scale', scale)
 
     def on_before_optimizer_step(self, optimizer):
         if self.debug:
