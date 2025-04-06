@@ -26,14 +26,19 @@ from . import transformers
 
 
 class XLabModule(L.LightningModule, ABC):
-    model: transformers.GenerativeTextTransformer
-
     @abstractmethod
-    def __init__(self, pad_index: Optional[int], debug: bool = False):
+    def __init__(self, n_vocab, max_len, d_model, pad_index: Optional[int], debug: bool = False, **kwargs):
         super().__init__()
         self.save_hyperparameters()
+        self.model = transformers.GenerativeTextTransformer(
+            n_vocab, max_len, d_model,
+            pad_index=pad_index, pad_mask=False,
+            **kwargs
+        )
         self.pad_index = pad_index
         self.debug = debug
+        if self.debug:
+            self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)
 
     def forward(self, x):
         return self.model(x)
@@ -87,18 +92,17 @@ class XLabModel(XLabModule):
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
             attn_drop: bool = True, ff_drop: bool = True,
+            debug: bool = False
     ):
-        super().__init__(pad_index)
-        self.model = transformers.GenerativeTextTransformer(
-            n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
+        super().__init__(
+            n_vocab, max_len, d_model, pad_index=pad_index,
             position=position, decoder=transformers.TransformerDecoder,
             n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
             attn_drop=attn_drop, ff_drop=ff_drop,
+            debug=debug
         )
-        if self.debug:
-            self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)
 
 
 class XLabPyTorchModel(XLabModule):
@@ -110,14 +114,13 @@ class XLabPyTorchModel(XLabModule):
             n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
+            debug: bool = False
     ):
-        super().__init__(pad_index)
-        self.model = transformers.GenerativeTextTransformer(
-            n_vocab, max_len, d_model, pad_index=pad_index, pad_mask=False,
+        super().__init__(
+            n_vocab, max_len, d_model, pad_index=pad_index,
             position=position, decoder=transformers.PyTorchTransformerDecoder,
             n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
+            debug=debug
         )
-        if self.debug:
-            self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)
