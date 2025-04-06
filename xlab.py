@@ -23,7 +23,7 @@ from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar, RichMo
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 
 from xlab.config import THEME_COLOR
-from xlab.dataset import XLabDataModule
+from xlab.datamodules import XLabDataModule
 from xlab.models import XLabModule, XLabModel
 
 

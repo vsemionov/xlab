@@ -20,7 +20,7 @@ import warnings
 import torch
 import click
 
-from xlab.dataset import XLabDataModule
+from xlab.datamodules import XLabDataModule
 from xlab.models import XLabModel
 from xlab import inference
 
