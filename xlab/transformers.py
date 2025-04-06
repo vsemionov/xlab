@@ -205,11 +205,11 @@ class GenerativeTextTransformer(nn.Module):
         self.pad_index = pad_index if pad_mask else None
         self.embedding = nn.Embedding(n_vocab, d_model, padding_idx=pad_index)
         self.transformer = Transformer(max_len=max_len, d_model=d_model, causal=True, **kwargs)
-        self.linear = nn.Linear(d_model, n_vocab)
+        self.head = nn.Linear(d_model, n_vocab)
 
     def forward(self, x):
         pad_mask = (x == self.pad_index) if self.pad_index is not None else None
         x = self.embedding(x) * math.sqrt(self.embedding.embedding_dim)
         x = self.transformer(x, seq_mask=pad_mask)
-        y = self.linear(x)
+        y = self.head(x)
         return y
