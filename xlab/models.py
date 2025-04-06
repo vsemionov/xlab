@@ -14,6 +14,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Optional
+import warnings
 
 import torch
 import torch.nn as nn
@@ -61,6 +62,8 @@ class XLabModule(L.LightningModule, ABC):
         accuracy = correct / targets.numel()
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
         self.log_dict(log_data, prog_bar=True, sync_dist=sync_dist)
+        if torch.isnan(loss) or torch.isinf(loss):
+            warnings.warn('Loss is NaN or Inf')
         return loss
 
     def training_step(self, batch, batch_idx):
