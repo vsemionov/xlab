@@ -20,6 +20,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import lightning as L
+from lightning.pytorch.utilities import grad_norm
 
 from . import transformers
 
@@ -27,13 +28,12 @@ from . import transformers
 class XLabModule(L.LightningModule, ABC):
     model: transformers.GenerativeTextTransformer
 
-    _show_shape_info = False
-
     @abstractmethod
-    def __init__(self, pad_index: Optional[int]):
+    def __init__(self, pad_index: Optional[int], debug: bool = False):
         super().__init__()
         self.save_hyperparameters()
         self.pad_index = pad_index
+        self.debug = debug
 
     def forward(self, x):
         return self.model(x)
@@ -71,6 +71,11 @@ class XLabModule(L.LightningModule, ABC):
         y = self(x)
         return y
 
+    def on_before_optimizer_step(self, optimizer):
+        if self._debug:
+            norms = grad_norm(self, norm_type=2)
+            self.log_dict(norms)
+
 
 class XLabModel(XLabModule):
     """XLab model"""
@@ -92,7 +97,7 @@ class XLabModel(XLabModule):
             activation=activation,
             attn_drop=attn_drop, ff_drop=ff_drop,
         )
-        if self._show_shape_info:
+        if self.debug:
             self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)
 
 
@@ -114,5 +119,5 @@ class XLabPyTorchModel(XLabModule):
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
         )
-        if self._show_shape_info:
+        if self.debug:
             self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)

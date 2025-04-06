@@ -1,0 +1,5 @@
+trainer:
+  detect_anomaly: true
+
+model:
+  debug: true
