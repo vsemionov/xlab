@@ -22,6 +22,7 @@ import torch.utils.data as data
 import lightning as L
 import datasets
 from joblib import Parallel, delayed
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .tokenizer import Tokenizer
 from .util import progress_bar, cached
@@ -245,7 +246,7 @@ class XLabDataModule(L.LightningDataModule):
                 self.datasets[split] = self._dataset(split, quiet=True)
 
     def train_dataloader(self):
-        return data.DataLoader(
+        return StatefulDataLoader(
             self.datasets['train'],
             batch_size=self.batch_size,
             shuffle=True,

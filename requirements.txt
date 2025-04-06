@@ -12,5 +12,6 @@ rich
 seaborn
 tensorboard
 torch==2.2.2
+torchdata
 torchtext
 tqdm
