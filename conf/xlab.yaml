@@ -5,6 +5,7 @@ trainer:
   num_nodes: 1
   precision: 16-mixed
   max_epochs: 20
+  val_check_interval: 0.2
 model:
   max_len: 256
   d_model: 512
@@ -20,8 +21,8 @@ model:
   attn_drop: true
   ff_drop: true
 data:
-  path: wikipedia
-  name: 20220301.simple
+  path: wikimedia/wikipedia
+  name: 20231101.en
   splits:
     train: 0.9
     val: 0.05
