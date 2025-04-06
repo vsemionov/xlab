@@ -1,4 +1,5 @@
 seed_everything: 42
+
 trainer:
   logger:
     class_path: TensorBoardLogger
@@ -21,6 +22,7 @@ trainer:
   max_epochs: 20
   enable_model_summary: false  # prevents a warning that the callback is already configured
   deterministic: true
+
 optimizer:
   class_path: Adam
   init_args:

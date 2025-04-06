@@ -5,6 +5,7 @@ trainer:
   num_nodes: 1
   precision: 16-mixed
   val_check_interval: 0.2
+
 model:
   max_len: 256
   d_model: 512
@@ -19,6 +20,7 @@ model:
   activation: torch.nn.ReLU
   attn_drop: true
   ff_drop: true
+
 data:
   path: wikimedia/wikipedia
   name: 20231101.en
@@ -38,6 +40,7 @@ data:
   pin_memory: true
   num_workers: 4
   persistent_workers: true
+
 optimizer:
   class_path: Adam
   init_args:
