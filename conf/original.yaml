@@ -1,5 +1,4 @@
 model:
-  max_len: 128
   d_model: 512
   position: xlab.transformers.PositionalEncoding
   n_layers: 6
@@ -10,5 +9,3 @@ model:
   postnorm: false
   norm: torch.nn.LayerNorm
   activation: torch.nn.ReLU
-  attn_drop: false
-  ff_drop: false
