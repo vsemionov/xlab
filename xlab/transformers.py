@@ -17,6 +17,7 @@
 # https://peterbloem.nl/blog/transformers
 # https://github.com/karpathy/minGPT
 # https://github.com/pytorch/pytorch/blob/main/torch/nn/modules/transformer.py
+# https://nlp.seas.harvard.edu/annotated-transformer/
 
 import math
 import torch
