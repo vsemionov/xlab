@@ -53,12 +53,22 @@ class XLabModule(L.LightningModule, ABC):
         # optimizers and lr schedulers are defined in configuration, this is only a default
         return optim.Adam(self.parameters(), lr=3e-4)
 
+    def _accuracy(self, logits, targets):
+        indices = logits.argmax(dim=2)
+        if self.pad_index is not None:
+            mask = targets != self.pad_index
+            indices = indices[mask]
+            targets = targets[mask]
+        num_correct = (indices == targets).sum()
+        num_targets = targets.numel()
+        # ignore division by zero, e.g. targets must contain non-ignored elements
+        return num_correct / num_targets
+
     def _step(self, batch, name, sync_dist=False):
         x, targets = batch
         logits = self(x)
         loss = self.loss(logits, targets)
-        correct = (logits.detach().argmax(dim=2) == targets).sum()
-        accuracy = correct / targets.numel()
+        accuracy = self._accuracy(logits.detach(), targets)
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
         self.log_dict(log_data, prog_bar=True, sync_dist=sync_dist)
         if torch.isnan(loss) or torch.isinf(loss):
