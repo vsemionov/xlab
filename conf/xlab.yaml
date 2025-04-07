@@ -3,7 +3,7 @@ trainer:
   strategy: auto
   devices: auto
   num_nodes: 1
-  precision: 16-mixed
+  precision: bf16-mixed
   val_check_interval: 0.2
 
 model:
