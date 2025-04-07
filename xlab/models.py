@@ -102,7 +102,7 @@ class XLabModel(XLabModule):
             n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
-            attn_drop: bool = True, ff_drop: bool = True,
+            block_drop: bool = True, attn_drop: bool = True, ff_drop: bool = True,
             debug: bool = False
     ):
         super().__init__(
@@ -111,7 +111,7 @@ class XLabModel(XLabModule):
             n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
-            attn_drop=attn_drop, ff_drop=ff_drop,
+            block_drop=block_drop, attn_drop=attn_drop, ff_drop=ff_drop,
             debug=debug
         )
 

@@ -103,15 +103,14 @@ class MultiHeadSelfAttention(nn.Module):
 
 class TransformerLayer(nn.Module):
     def __init__(self, d_model, n_heads, d_ff, prenorm=False, norm=nn.LayerNorm, activation=nn.ReLU(),
-            dropout=0.1, attn_drop=True, ff_drop=True):
-        # attn_drop and ff_drop are true to match the pytorch implementation, deviating from the original paper
+            dropout=0.1, block_drop=True, attn_drop=True, ff_drop=True):
         super().__init__()
         self.prenorm = prenorm
         self.mhsa = MultiHeadSelfAttention(d_model, n_heads, dropout=(dropout * attn_drop))
-        self.dropout1 = nn.Dropout(dropout)
+        self.dropout1 = nn.Dropout(dropout * block_drop)
         self.norm1 = norm(d_model)
         self.ff = FeedForward(d_model, d_ff, activation=activation, dropout=(dropout * ff_drop))
-        self.dropout2 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout * block_drop)
         self.norm2 = norm(d_model)
 
     def forward(self, x, mask=None):
