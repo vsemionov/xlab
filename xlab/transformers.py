@@ -22,6 +22,7 @@
 import math
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 
 
 class PositionalEncoding(nn.Module):
@@ -129,7 +130,7 @@ class ParameterInit:
     def reset_parameters(self: nn.Module):
         for p in self.parameters():
             if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
+                init.xavier_uniform_(p)
 
 
 class TransformerDecoder(nn.Module, ParameterInit):
