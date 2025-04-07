@@ -81,8 +81,10 @@ class XLabModule(L.LightningModule, ABC):
         return y
 
     def on_after_backward(self):
-        if self.debug and isinstance(self.trainer.precision_plugin, MixedPrecision):
-            scale = self.trainer.precision_plugin.scaler.get_scale()
+        if self.debug \
+                and isinstance(plugin := self.trainer.precision_plugin, MixedPrecision) \
+                and (scaler := plugin.scaler) is not None:
+            scale = scaler.get_scale()
             self.log('grad_scale', scale)
 
     def on_before_optimizer_step(self, optimizer):
