@@ -58,7 +58,7 @@ class XLabModule(L.LightningModule, ABC):
         x, targets = batch
         logits = self(x)
         loss = self.loss(logits, targets)
-        correct = (logits.detach().argmax(dim=2) == targets).sum().item()
+        correct = (logits.detach().argmax(dim=2) == targets).sum()
         accuracy = correct / targets.numel()
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
         self.log_dict(log_data, prog_bar=True, sync_dist=sync_dist)
