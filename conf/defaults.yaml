@@ -23,7 +23,7 @@ trainer:
   deterministic: true
 
 optimizer:
-  class_path: Adam
+  class_path: AdamW
   init_args:
     lr: 3e-4
-    weight_decay: 0
+    weight_decay: 0.1

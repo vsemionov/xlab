@@ -20,8 +20,8 @@ model:
   postnorm: true
   norm: torch.nn.LayerNorm
   activation: torch.nn.ReLU
-  pos_drop: true
-  block_drop: true
+  pos_drop: false
+  block_drop: false
   attn_drop: true
   ff_drop: true
 
@@ -44,9 +44,3 @@ data:
   pin_memory: true
   num_workers: 4
   persistent_workers: true
-
-optimizer:
-  class_path: Adam
-  init_args:
-    lr: 3e-4
-    weight_decay: 0
