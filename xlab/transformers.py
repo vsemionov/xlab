@@ -187,10 +187,10 @@ class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
 
 class Transformer(nn.Module):
     def __init__(self, position=PositionalEncoding, decoder=TransformerDecoder,
-            max_len=128, d_model=128, n_layers=2, n_heads=2, d_ff=256, dropout=0.1, **kwargs):
+            max_len=128, d_model=128, n_layers=2, n_heads=2, d_ff=256, dropout=0.1, pos_drop=True, **kwargs):
         super().__init__()
         self.position = position(max_len, d_model)
-        self.dropout = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(dropout * pos_drop)
         self.decoder = decoder(max_len, d_model, n_layers, n_heads, d_ff, dropout=dropout, **kwargs)
 
     def forward(self, x, seq_mask=None):

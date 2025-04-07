@@ -10,6 +10,7 @@ model:
   postnorm: false
   norm: torch.nn.LayerNorm
   activation: torch.nn.ReLU
+  pos_drop: true
   block_drop: true
   # attn_drop: true  # not mentioned in paper, but used frequently (e.g. pytorch and annotated transformer)
   # ff_drop: true  # not mentioned in paper, but used frequently (e.g. pytorch and annotated transformer)

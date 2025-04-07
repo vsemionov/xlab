@@ -20,6 +20,7 @@ model:
   postnorm: true
   norm: torch.nn.LayerNorm
   activation: torch.nn.ReLU
+  pos_drop: true
   block_drop: true
   attn_drop: true
   ff_drop: true

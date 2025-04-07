@@ -99,7 +99,7 @@ class XLabModel(XLabModule):
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = transformers.PositionalEncoding,
-            n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
+            n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1, pos_drop: bool = True,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
             block_drop: bool = True, attn_drop: bool = True, ff_drop: bool = True,
@@ -108,7 +108,7 @@ class XLabModel(XLabModule):
         super().__init__(
             n_vocab, max_len, d_model, pad_index=pad_index,
             position=position, decoder=transformers.TransformerDecoder,
-            n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
+            n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout, pos_drop=pos_drop,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
             block_drop=block_drop, attn_drop=attn_drop, ff_drop=ff_drop,
@@ -122,7 +122,7 @@ class XLabPyTorchModel(XLabModule):
             self,
             n_vocab: int, max_len: int = 128, d_model: int = 128, pad_index: Optional[int] = None,
             position: type[nn.Module] = transformers.PositionalEncoding,
-            n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1,
+            n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1, pos_drop: bool = True,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
             debug: bool = False
@@ -130,7 +130,7 @@ class XLabPyTorchModel(XLabModule):
         super().__init__(
             n_vocab, max_len, d_model, pad_index=pad_index,
             position=position, decoder=transformers.PyTorchTransformerDecoder,
-            n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout,
+            n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout, pos_drop=pos_drop,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
             debug=debug
