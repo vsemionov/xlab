@@ -19,7 +19,7 @@ model:
   prenorm: true
   postnorm: true
   norm: torch.nn.LayerNorm
-  activation: torch.nn.ReLU
+  activation: torch.nn.GELU
   pos_drop: false
   block_drop: false
   attn_drop: true
