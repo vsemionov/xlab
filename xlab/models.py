@@ -51,8 +51,7 @@ class XLabModule(L.LightningModule, ABC):
 
     def configure_optimizers(self):
         # optimizers and lr schedulers are defined in configuration, this is only a default
-        optimizer = optim.Adam(self.parameters(), lr=3e-4)
-        return optimizer
+        return optim.Adam(self.parameters(), lr=3e-4)
 
     def _step(self, batch, name, sync_dist=False):
         x, targets = batch
@@ -77,8 +76,7 @@ class XLabModule(L.LightningModule, ABC):
 
     def predict_step(self, batch, batch_idx):
         x, _ = batch
-        y = self(x)
-        return y
+        return self(x)
 
     def on_after_backward(self):
         if self.debug \
