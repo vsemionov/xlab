@@ -14,8 +14,8 @@ model:
   n_heads: 8
   d_ff: 2048
   dropout: 0.1
-  prenorm: false
-  postnorm: false
+  prenorm: true
+  postnorm: true
   norm: torch.nn.LayerNorm
   activation: torch.nn.ReLU
   attn_drop: true
