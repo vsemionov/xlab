@@ -1,0 +1,15 @@
+model:
+  # max_len: 256  # original model from paper trained on variable-length sequences
+  d_model: 512
+  position: xlab.transformers.PositionalEncoding
+  n_layers: 6
+  n_heads: 8
+  d_ff: 2048
+  dropout: 0.1
+  prenorm: false
+  postnorm: false
+  norm: torch.nn.LayerNorm
+  activation: torch.nn.ReLU
+  block_drop: true
+  # attn_drop: true  # not mentioned in paper, but used frequently (e.g. pytorch and annotated transformer)
+  # ff_drop: true  # not mentioned in paper, but used frequently (e.g. pytorch and annotated transformer)
