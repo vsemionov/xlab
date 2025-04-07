@@ -59,10 +59,9 @@ class XLabModule(L.LightningModule, ABC):
             mask = targets != self.pad_index
             indices = indices[mask]
             targets = targets[mask]
-        num_correct = (indices == targets).sum()
-        num_targets = targets.numel()
+        correct = indices == targets
         # ignore division by zero, e.g. targets must contain non-ignored elements
-        return num_correct / num_targets
+        return correct.sum() / correct.numel()
 
     def _step(self, batch, name, sync_dist=False):
         x, targets = batch
