@@ -71,8 +71,6 @@ class XLabModule(L.LightningModule, ABC):
         accuracy = self._accuracy(logits.detach(), targets)
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
         self.log_dict(log_data, prog_bar=True, sync_dist=sync_dist)
-        if torch.isnan(loss) or torch.isinf(loss):
-            warnings.warn('Loss is NaN or Inf')
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -87,6 +85,10 @@ class XLabModule(L.LightningModule, ABC):
     def predict_step(self, batch, batch_idx):
         x, _ = batch
         return self(x)
+
+    def on_before_backward(self, loss):
+        if self.debug and torch.isnan(loss) or torch.isinf(loss):
+            warnings.warn('Loss is NaN or Inf')
 
     def on_after_backward(self):
         if self.debug \
