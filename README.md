@@ -9,7 +9,7 @@ Transformer Lab
 
 ### Validate
 ```shell
-./xlab.py validate -c conf/xlab.yaml --ckpt_path logs/version_0/checkpoints/last.ckpt
+./xlab.py validate -c conf/xlab.yaml --ckpt_path PATH
 ```
 
 ## Results
