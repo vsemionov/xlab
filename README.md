@@ -1,5 +1,5 @@
 # XLab
-Transformer Lab - an experiment to implement and train transformer models at scale, using modern techniques.
+Transformer Lab - experimental implementation and training of transformer models at scale, using modern techniques.
 
 It supports:
  - Configurable model sizes, architecture modifications, datasets, tokenizer settings, and training procedure
