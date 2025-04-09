@@ -75,8 +75,8 @@ tokenizer = XLabDataModule.load_from_checkpoint(checkpoint_path, map_location=de
 model = XLabModel.load_from_checkpoint(checkpoint_path, map_location=device).eval().requires_grad_(False)
 inputs = torch.tensor([tokenizer[tokenizer.sos_token]] + tokenizer.encode(prompt), device=model.device)
 outputs = inference.sample(
-    model, inputs,
-    output_length=limit, block_size=model.hparams['max_len'],
+    model, inputs, limit,
+    block_size=model.hparams['max_len'],
     eos_class=tokenizer[tokenizer.eos_token]
 )
 output = tokenizer.decode(outputs)
