@@ -103,6 +103,8 @@ A transformer decoder, corresponding to a causal (unidirectional) encoder in the
    (to the product of the queries and keys, and to the hidden activations, respectively)
    (performance improvement)
 
+Positional encodings are used, because learned positional embeddings degrade performance in the current setup.
+
 
 ## Tokenizer
 The implementation from [torchtext](https://github.com/pytorch/text),
@@ -125,6 +127,7 @@ Articles (texts) are chunked into sequences with 50% overlap.
 The model was trained on sequences of maximum length 256.
 To speed up training and reduce memory usage, 16-bit mixed precision is used.
 To mitigate stability issues, the bfloat16 data type is used, along with gradient clipping by norm 1.0.
+The AdamW optimizer is used, with learning rate 3e-4 and weight decay 0.1.
 The training ran on a single A100 GPU, with batch size 256, and was stopped after 4 epochs (440K steps after 2 days).
 
 
@@ -145,3 +148,17 @@ the world bowling championships were a women ' s national bowling championships 
 cats and dogs ( , , ) is a 1986 indian malayalam-language drama film directed by m . k . raman nair and produced by the film production company <unk> development . it stars <unk> <unk> and <unk> , while <unk> in the lead roles , <unk> <unk> , and muhammed in three members of the comedy team . the film is a remake of the 1989 hindi film <unk> . it was remade in telugu as oral cough . inscription the film was released on 6 april 1986 in kerala . plot a criminal named <unk> visits rani ( <unk> <unk> )
 
 All of these can be reproduced with the included inference script, using random seed 42 and limit 100.
+
+
+## Future work
+ - use a BPE tokenizer, e.g. from tiktoken or sentencepiece
+ - add learning rate scheduling (e.g. cosine with warmup, or reduce lr on plateau)
+ - rotary positional embeddings
+ - RMSNorm
+ - SwiGLU activation
+ - increase the maximum context length, e.g. via gradient checkpointing
+ - train a larger model on a larger and more diverse dataset
+ - fine-tune for a downstream task
+ - quantization
+ - compile the model during training, and for inference
+ - cache KV pairs in inference, try multi-query/grouped-query attention
