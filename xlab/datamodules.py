@@ -35,7 +35,7 @@ class XLabDataModule(L.LightningDataModule):
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
-            chunk_size: Union[float, int] = 0.5,
+            step_size: Union[float, int] = 0.5,
             batch_size: int = 128, pin_memory: bool = False, num_workers: int = 4, persistent_workers: bool = False,
     ):
         super().__init__()
@@ -48,7 +48,7 @@ class XLabDataModule(L.LightningDataModule):
         self.num_proc = num_proc
         self.progress = progress
         self.seq_len = seq_len
-        self.chunk_size = chunk_size
+        self.step_size = step_size
         self.batch_size = batch_size
         self.pin_memory = pin_memory
         self.num_workers = num_workers
@@ -67,7 +67,7 @@ class XLabDataModule(L.LightningDataModule):
         )
         chunk_dataset = ChunkDataset(
             text_dataset,
-            seq_len=self.seq_len, chunk_size=self.chunk_size,
+            seq_len=self.seq_len, step_size=self.step_size,
             num_proc=self.num_proc,
             progress=self.progress,
         )

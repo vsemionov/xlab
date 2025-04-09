@@ -123,15 +123,15 @@ class ChunkDataset(data.Dataset):
     def __init__(
             self,
             dataset: TextDataset,
-            seq_len: int, chunk_size: Union[float, int] = 0.5,
+            seq_len: int, step_size: Union[float, int] = 0.5,
             num_proc: int = 4,
             progress: str = 'tqdm'
     ):
         super().__init__()
         self.dataset = dataset
         self.seq_len = seq_len
-        self.chunk_size = int(chunk_size * seq_len) if isinstance(chunk_size, float) else chunk_size
-        assert 0 < self.chunk_size <= self.seq_len
+        self.step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
+        assert 0 < self.step_size <= self.seq_len
         self.num_proc = num_proc
         self.progress = progress
         self.index = cached(lambda: self._chunk(dataset), 'index', fingerprint(dataset.dataset))
@@ -140,9 +140,9 @@ class ChunkDataset(data.Dataset):
         index = []
         samples = parallelize(dataset, n_jobs=self.num_proc, threaded=True)
         for i, indices in enumerate(progress_bar(samples, kind=self.progress, total=len(dataset), desc='Chunking')):
-            # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.chunk_size)  # 1 accounts for <sos>
-            n_chunks = (len(indices) + self.chunk_size) // self.chunk_size
-            index.extend([(i, j * self.chunk_size) for j in range(n_chunks)])
+            # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.step_size)  # 1 accounts for <sos>
+            n_chunks = (len(indices) + self.step_size) // self.step_size
+            index.extend([(i, j * self.step_size) for j in range(n_chunks)])
         # use smaller dtypes to save memory; can be further optimized by using a separate array for the small 2nd index
         dtype = np.uint32 if len(dataset) < 2**32 else np.uint64
         index = np.array(index, dtype=dtype)
