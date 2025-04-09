@@ -135,7 +135,7 @@ The training ran on a single A100 GPU, with batch size 256, and was stopped afte
 ## Results
 | Version | Checkpoint | Loss (test) | Accuracy (test) |
 |---------|------------|-------------|-----------------|
-| 0.1     | last       | 3.18        | 40.0            |
+| 0.1.0   | last       | 3.18        | 40.0            |
 
 
 ## Generations
