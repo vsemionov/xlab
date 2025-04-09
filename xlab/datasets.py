@@ -141,8 +141,8 @@ class ChunkDataset(data.Dataset):
         samples = parallelize(dataset, n_jobs=self.num_proc, threaded=True)
         for i, indices in enumerate(progress_bar(samples, kind=self.progress, total=len(dataset), desc='Chunking')):
             # integer arithmetic equivalent of math.ceil((len(indices) + 1) / self.step_size)  # 1 accounts for <sos>
-            n_chunks = (len(indices) + self.step_size) // self.step_size
-            index.extend([(i, j * self.step_size) for j in range(n_chunks)])
+            n_steps = (len(indices) + self.step_size) // self.step_size
+            index.extend([(i, j * self.step_size) for j in range(n_steps)])
         # use smaller dtypes to save memory; can be further optimized by using a separate array for the small 2nd index
         dtype = np.uint32 if len(dataset) < 2**32 else np.uint64
         index = np.array(index, dtype=dtype)
