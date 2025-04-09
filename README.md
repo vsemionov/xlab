@@ -15,4 +15,4 @@ Transformer Lab
 ## Results
 | Version | Checkpoint | Loss (test) | Accuracy (test) |
 |---------|------------|-------------|-----------------|
-| 0.1     |            |             |                 |
+| 0.1     | last       |             |                 |
