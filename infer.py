@@ -29,6 +29,7 @@ from xlab import inference
 @click.argument('checkpoint_path', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument('prompt')
 @click.option('-d', '--device', type=click.Choice(['auto', 'cuda', 'cpu']), default='auto')
+@click.option('-n', '--runs', type=click.IntRange(min=1), default=1)
 @click.option('-l', '--limit', type=click.IntRange(min=1), default=100)
 @click.option('-t', '--temperature', type=click.FloatRange(min=0, min_open=True), default=1)
 @click.option('-k', '--top-k', type=click.IntRange(min=1))
@@ -36,11 +37,11 @@ from xlab import inference
 @click.option('-s', '--seed', type=int)
 @click.option('-b', '--beam-search', is_flag=True)
 @click.option('-w', '--beam-width', type=click.IntRange(min=1), default=10)
-@click.option('-n', '--length-penalty', type=float, default=0)
+@click.option('-z', '--length-penalty', type=float, default=0)
 @click.option('--debug', is_flag=True)
 def main(
         checkpoint_path, prompt, device,
-        limit, temperature, top_k, top_p, seed,
+        runs, limit, temperature, top_k, top_p, seed,
         beam_search, beam_width, length_penalty,
         debug
 ):
@@ -63,26 +64,27 @@ def main(
     max_len = model.hparams['max_len']
     generator = torch.Generator().manual_seed(seed) if seed is not None else None
 
-    if not beam_search:
-        indices = inference.sample(
-            model, inputs,
-            temperature=temperature, top_k=top_k, top_p=top_p, generator=generator,
-            output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
-        )
-    else:
-        indices = inference.beam_search(
-            model, inputs,
-            beam_width=beam_width, length_penalty=length_penalty,
-            output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
-        )
+    for _ in range(runs):
+        if not beam_search:
+            indices = inference.sample(
+                model, inputs,
+                temperature=temperature, top_k=top_k, top_p=top_p, generator=generator,
+                output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
+            )
+        else:
+            indices = inference.beam_search(
+                model, inputs,
+                beam_width=beam_width, length_penalty=length_penalty,
+                output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
+            )
 
-    inputs = tokenizer.decode(inputs[1:].tolist())
-    indices = indices.tolist()
-    if len(indices) < limit:
-        indices.append(eos_index)
-    output = tokenizer.decode(indices)
-    sep = ' ' if inputs else ''
-    print(f'{prompt}{sep}{output}')
+        norm_prompt = tokenizer.decode(inputs[1:].tolist())
+        indices = indices.tolist()
+        if len(indices) < limit:
+            indices.append(eos_index)
+        output = tokenizer.decode(indices)
+        sep = ' ' if norm_prompt else ''
+        print(f'{norm_prompt}{sep}{output}')
 
 
 if __name__ == '__main__':
