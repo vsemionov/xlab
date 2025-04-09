@@ -1,4 +1,8 @@
 # XLab
+
+[![PyTorch Powered](https://img.shields.io/badge/pytorch-powered-blue?logo=pytorch)](https://pytorch.org/)
+[![Lightning Powered](https://img.shields.io/badge/lightning-powered-blue?logo=lightning)](https://lightning.ai/docs/pytorch/stable/)
+
 Transformer Lab - experimental implementation and training of transformer models at scale, using modern techniques.
 
 It supports:
