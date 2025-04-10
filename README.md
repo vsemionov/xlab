@@ -6,68 +6,36 @@
 
 Transformer Lab - experimental implementations and training of transformer models at scale, using modern techniques.
 
-It supports:
- - Configurable model sizes, architecture modifications, datasets, tokenizer settings, and training procedure
+It features:
+ - Simple, efficient implementations
  - Parallel and reproducible training on multiple GPUs and nodes
- - Inference using different algorithms / sampling strategies (e.g. temperature, top-p, top-k, beam search)
+ - Configurable architecture modifications and training procedure
+ - Inference using various generation strategies
 
 
 ## Getting started
-### Setup
-First, clone this repo and create a virtual environment. Install dependencies by running:
-```shell
-pip install -r requirements.txt
-```
-Alternatively, if you only intend to import the model (e.g. for inference, or to use your own training script),
-you can simply install the PyPI package:
+### Installation
+XLab can be installed as a Python package, or by cloning this repository.
+The former lets you use the models for inference, but to train them you need your own code.
+And the latter comes with prebuilt training and inference scripts, as well as configuration.
+
+To install XLab as a Python package, run:
 ```shell
 pip install xlabml
 ```
+Note that this will also install [Lightning](https://lightning.ai/docs/pytorch/stable/) and its dependencies.
+Given enough interest, future package versions may come without Lightning, to minimize the number of dependencies.
 
-### Download weights
-If you want to run inference using pre-trained weights, download the `.pt` file(s) from this project's releases.
-
-### Train the model
-You can skip training if you only want to run inference using pre-trained weights.
-To train the model, run the following command:
+To install Xlab from this repository, clone it, create a virtual environment, and run:
 ```shell
-./xlab.py fit -c conf/xlab.yaml
-```
-Specifying `-c conf/xlab.yaml` tells the training script to use a larger dataset and model
-(the default ones are intended for quick experiments).
-This will also download and pre-process the dataset, as well as train the tokenizer, which takes about 2 hours.
-The actual training takes about 10 hours per epoch on an A100 GPU.
-For models with less memory, you may need to modify the configuration and decrease the context size and/or batch size.
-By default, the learning curves are saved in TensorBoard format, and you can monitor them by running:
-```shell
-tensorboard --logdir .
-```
-Keep this running, point your browser to http://localhost:6006/, and click the *Scalars* tab.
-
-### Validate (optional)
-```shell
-./xlab.py validate -c conf/xlab.yaml --ckpt_path PATH
-```
-where PATH points to a checkpoint, downloaded from this project's releases, or saved during training.
-To evaluate on the test set, replace `valudate` with `test` in the above command.
-
-### Inference
-For basic inference using multinomial sampling, run:
-```shell
-./infer.py [OPTIONS] CHECKPOINT_PATH "PROMPT"
-```
-To see other inference options, run `./infer.py --help`.
-
-### Exporting model weights and tokenizer vocabulary
-Checkpoints created during training contain not only the model weights,
-but also the optimizer state and other information needed to resume training from a saved checkpoint.
-This makes the checkpoints 3x larger than the actual model weights.
-To export a "clean" checkpoint, containing only the weights and vocabulary, run:
-```shell
-./manage.py export-checkpoint CHECKPOINT_PATH
+pip install -r requirements.txt
 ```
 
-### Use in your code
+### Obtaining weights
+If you need pre-trained weights for inference or fine-tuning,
+download the `.pt` file(s) from the project's releases.
+
+### Using in your code
 ```python
 import torch
 from xlabml.datamodules import XLabDataModule
@@ -75,7 +43,7 @@ from xlabml.models import XLabModel
 from xlabml import inference
 
 # adjust these
-checkpoint_path = 'logs/version_0/checkpoints/last.ckpt'
+checkpoint_path = 'path/to/weights.pt'
 prompt = 'april'
 device = 'cuda'
 limit = 10
@@ -89,6 +57,49 @@ outputs = inference.sample(
     eos_class=tokenizer[tokenizer.eos_token]
 )
 output = tokenizer.decode(outputs.tolist())
+```
+Note that the resulting *model* object will be a Lightning module.
+To decouple the model from Lightning, the underlying PyTorch module is accessible via the *model* attribute.
+
+### Training the model
+From the command line, run:
+```shell
+./xlab.py fit -c conf/xlab.yaml
+```
+Specifying `-c conf/xlab.yaml` tells the training script to use a larger dataset and model
+(the default ones are intended for quick experiments).
+This will also download and pre-process the dataset, as well as train the tokenizer, which takes about 2 hours total.
+The actual training takes about 10 hours per epoch on an A100 GPU.
+For hardware with less memory, you may need to modify the configuration and decrease the context size and/or batch size.
+By default, the learning curves are saved in TensorBoard format, and you can monitor them by running:
+```shell
+tensorboard --logdir .
+```
+Keep this running, point your browser to http://localhost:6006/, and click the *Scalars* tab.
+
+### Validation
+```shell
+./xlab.py validate -c conf/xlab.yaml --ckpt_path PATH
+```
+where PATH points to a checkpoint, downloaded from this project's releases, or saved during training.
+To evaluate on the test set, replace `valudate` with `test` in the above command.
+
+### Inference
+For command line inference, run:
+```shell
+./infer.py CHECKPOINT_PATH "PROMPT"
+```
+The default generation strategy is multinomial sampling, but beam search can also be selected.
+Options exist for configuring the algorithms (e.g. temperature, top-k, top-p, beam width, etc).
+To see all inference options, run `./infer.py --help`.
+
+### Exporting model weights and tokenizer vocabulary
+Checkpoints created during training contain not only the model weights,
+but also the optimizer state and other information needed to resume training from a saved checkpoint.
+This makes the checkpoints 3x larger than the actual model weights.
+To export a "clean" checkpoint, containing only the weights and vocabulary, run:
+```shell
+./manage.py export-checkpoint CHECKPOINT_PATH
 ```
 
 ### Configuration
@@ -119,8 +130,8 @@ Positional encodings are used, because learned positional embeddings degrade per
 The implementation from [torchtext](https://github.com/pytorch/text),
 which lowercases the input text, strips punctuation, and yields tokens between whitespace boundaries.
 The vocabulary is built from the 32K tokens with the highest frequencies across the training set.
-To avoid misinterpretation and improve reversibility,
-tokens matching special values (e.g. *&lt;unk&gt;* and *&lt;pad&gt;*) are escaped.
+Tokens matching special values (e.g. *&lt;unk&gt;* and *&lt;pad&gt;*) are escaped
+in order to avoid misinterpretation and improve reversibility.
 
 
 ## Dataset
