@@ -113,8 +113,7 @@ To see the full list, run `./xlab.py --help`.
 
 
 ## Model
-A transformer decoder, corresponding to a causal (unidirectional) encoder in the original architecture
-([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762)), "base" variant, with the following modifications:
+A transformer decoder ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762)) with the following modifications:
  - Normalization is performed before the transformer sublayers.
    An extra normalization layer is added after the last feedforward sublayer.
    This improved both performance and training stability.
