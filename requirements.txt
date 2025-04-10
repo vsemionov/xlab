@@ -12,7 +12,7 @@ platformdirs
 rich
 seaborn
 tensorboard
-torch<2.4
+torch<2.3
 torchdata
 torchtext
 tqdm
