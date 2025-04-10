@@ -14,9 +14,7 @@ It supports:
 
 ## Getting started
 ### Setup
-First, clone this repo and create a virtual environment.
-Python 3.12 is tested, but other versions may also work.
-Install dependencies by running:
+First, clone this repo and create a virtual environment. Install dependencies by running:
 ```shell
 pip install -r requirements.txt
 ```
