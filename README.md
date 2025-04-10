@@ -1,4 +1,4 @@
-![XLab logo](https://github.com/user-attachments/assets/bf7583f9-d2df-4ea1-9abb-fd6e0cd063d4)
+![XLab logo](https://github.com/user-attachments/assets/d0951084-598a-4298-b98f-b0f74d7c3656)
 
 # XLab
 
