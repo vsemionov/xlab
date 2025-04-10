@@ -67,7 +67,7 @@ def sample(
         if top_k:
             probas, indices = probas.topk(top_k)
         else:
-            indices = torch.arange(probas.size(-1))
+            indices = torch.arange(probas.size(-1), device=probas.device)
 
         if top_p:
             sorted_probas, sorted_indices = probas.sort()  # ascending sort simplifies the following
@@ -118,7 +118,7 @@ def beam_search(
     Node = collections.namedtuple('Node', ['path', 'proba', 'score'])
     model.eval()
 
-    empty = torch.tensor([], dtype=torch.int64, device=model.device)
+    empty = torch.tensor([], dtype=torch.int64, device=x.device)
     root = Node(empty, 0.0, 0.0)
     nodes = branches = [root]
     leaves = []
