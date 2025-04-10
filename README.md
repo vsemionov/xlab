@@ -1,3 +1,5 @@
+![XLab logo](https://github.com/user-attachments/assets/7c839091-973b-451a-a24d-e183684e12cc)
+
 # XLab
 
 [![PyPI Project](https://img.shields.io/badge/pypi-xlabml-blue?logo=pypi)](https://pypi.org/project/xlabml/)
