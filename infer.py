@@ -20,9 +20,9 @@ import warnings
 import torch
 import click
 
-from xlab.datamodules import XLabDataModule
-from xlab.models import XLabModel
-from xlab import inference
+from xlabml.datamodules import XLabDataModule
+from xlabml.models import XLabModel
+from xlabml import inference
 
 
 @click.command()

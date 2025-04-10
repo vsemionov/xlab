@@ -23,7 +23,7 @@ import shutil
 import torch
 import click
 
-from xlab.util import get_cache_dir
+from xlabml.utils import get_cache_dir
 
 
 @click.group()

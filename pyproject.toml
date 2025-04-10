@@ -1,0 +1,30 @@
+[build-system]
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "xlabml"
+authors = [{name = "Victor Semionov", email = "vsemionov@gmail.com"}]
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dynamic = ["version", "description"]
+dependencies = [
+    "datasets",
+    "joblib",
+    "jsonargparse[signatures]",
+    "lightning",
+    "numpy<2.0",
+    "platformdirs",
+    "rich",
+    "torch<2.4",
+    "torchdata",
+    "torchtext",
+    "tqdm",
+]
+
+[project.urls]
+Home = "https://github.com/vsemionov/xlab"
+
+[tool.flit.module]
+name = "xlabml"

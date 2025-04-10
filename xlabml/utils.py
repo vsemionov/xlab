@@ -17,7 +17,7 @@ import platformdirs
 from tqdm.auto import tqdm
 from rich.progress import track
 
-from . import config
+import xlabml
 
 
 def progress_bar(iterable, kind='tqdm', total=None, desc='Working'):
@@ -30,7 +30,7 @@ def progress_bar(iterable, kind='tqdm', total=None, desc='Working'):
 
 
 def get_cache_dir(ensure_exists=True):
-    return platformdirs.user_cache_path(config.APP_NAME, ensure_exists=ensure_exists)
+    return platformdirs.user_cache_path(xlabml.__name__, ensure_exists=ensure_exists)
 
 
 def cached(function, name, fingerprint):

@@ -22,9 +22,9 @@ from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar, RichModelSummary
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 
-from xlab.config import THEME_COLOR
-from xlab.datamodules import XLabDataModule
-from xlab.models import XLabModule, XLabModel
+from xlabml.config import THEME_COLOR
+from xlabml.datamodules import XLabDataModule
+from xlabml.models import XLabModule, XLabModel
 
 
 class XLabCLI(LightningCLI):

@@ -1,5 +1,6 @@
 # XLab
 
+[![PyPI Project](https://img.shields.io/badge/pypi-xlabml-blue?logo=pypi)](https://pypi.org/project/xlabml/)
 [![PyTorch Powered](https://img.shields.io/badge/pytorch-powered-blue?logo=pytorch)](https://pytorch.org/)
 [![Lightning Powered](https://img.shields.io/badge/lightning-powered-blue?logo=lightning)](https://lightning.ai/docs/pytorch/stable/)
 
@@ -18,6 +19,11 @@ Python 3.12 is tested, but other versions may also work.
 Install dependencies by running:
 ```shell
 pip install -r requirements.txt
+```
+Alternatively, if you only intend to import the model (e.g. for inference, or to use your own training script),
+you can simply install the PyPI package:
+```shell
+pip install xlabml
 ```
 
 ### Download weights
@@ -66,9 +72,9 @@ To export a "clean" checkpoint, containing only the weights and vocabulary, run:
 ### Use in your code
 ```python
 import torch
-from xlab.datamodules import XLabDataModule
-from xlab.models import XLabModel
-from xlab import inference
+from xlabml.datamodules import XLabDataModule
+from xlabml.models import XLabModel
+from xlabml import inference
 
 # adjust these
 checkpoint_path = 'logs/version_0/checkpoints/last.ckpt'
@@ -84,7 +90,7 @@ outputs = inference.sample(
     block_size=model.hparams['max_len'],
     eos_class=tokenizer[tokenizer.eos_token]
 )
-output = tokenizer.decode(outputs)
+output = tokenizer.decode(outputs.tolist())
 ```
 
 ### Configuration

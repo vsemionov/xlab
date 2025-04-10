@@ -23,7 +23,7 @@ import datasets
 from joblib import Parallel, delayed
 
 from .tokenizer import Tokenizer
-from .util import progress_bar, cached
+from .utils import progress_bar, cached
 
 
 def fingerprint(dataset):
