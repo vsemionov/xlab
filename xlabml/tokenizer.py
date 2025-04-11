@@ -30,12 +30,14 @@ class Tokenizer:
         self.tokenizer = get_tokenizer(tokenizer, language=language)
         self.max_tokens = max_tokens
         self.vocab: Optional[Vocab] = None
+        self._escape_pattern = re.compile(rf"({'|'.join(self.specials)})")
+        self._unescape_pattern = re.compile(rf"#({'|'.join(self.specials)})")
 
     def _escape(self, text):
-        return re.sub(rf"({'|'.join(self.specials)})", r'#\1', text)
+        return self._escape_pattern.sub(r'#\1', text)
 
     def _unescape(self, text):
-        return re.sub(rf"#({'|'.join(self.specials)})", r'\1', text)
+        return self._unescape_pattern.sub(r'\1', text)
 
     def tokenize(self, text: str) -> list[str]:
         return self.tokenizer(self._escape(text))
