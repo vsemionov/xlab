@@ -28,6 +28,7 @@ from xlabml import inference
 @click.command()
 @click.argument('checkpoint_path', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument('prompt')
+@click.option('-c', '--continued', is_flag=True)
 @click.option('-d', '--device', type=click.Choice(['auto', 'cuda', 'cpu']), default='auto')
 @click.option('-n', '--runs', type=click.IntRange(min=1), default=1)
 @click.option('-l', '--limit', type=click.IntRange(min=1), default=100)
@@ -40,7 +41,7 @@ from xlabml import inference
 @click.option('-z', '--length-penalty', type=float, default=0)
 @click.option('--debug', is_flag=True)
 def main(
-        checkpoint_path, prompt, device,
+        checkpoint_path, prompt, continued, device,
         runs, limit, temperature, top_k, top_p, seed,
         beam_search, beam_width, length_penalty,
         debug
@@ -60,7 +61,8 @@ def main(
     model.eval().requires_grad_(False)
 
     sos_index, eos_index = [tokenizer[token] for token in [tokenizer.sos_token, tokenizer.eos_token]]
-    inputs = torch.tensor([sos_index] + tokenizer.encode(prompt), device=model.device)
+    prefix = [] if continued else [sos_index]
+    inputs = torch.tensor(prefix + tokenizer.encode(prompt), device=model.device)
     max_len = model.hparams['max_len']
     generator = torch.Generator().manual_seed(seed) if seed is not None else None
 
@@ -78,7 +80,7 @@ def main(
                 output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
             )
 
-        norm_prompt = tokenizer.decode(inputs[1:].tolist())
+        norm_prompt = tokenizer.decode(inputs[len(prefix):].tolist())
         indices = indices.tolist()
         if len(indices) < limit:
             indices.append(eos_index)
