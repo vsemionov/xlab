@@ -10,7 +10,7 @@ trainer:
     - class_path: ModelSummary
       init_args:
         max_depth: 5
-    - xlabml.callbacks.XLabTQDMProgressBar
+    - XLabTQDMProgressBar
     - LearningRateMonitor
     - class_path: ModelCheckpoint
       init_args:

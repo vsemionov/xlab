@@ -20,6 +20,7 @@ import multiprocessing
 import torch
 from lightning.pytorch.cli import LightningCLI
 
+from xlabml.callbacks import *  # noqa
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModule, XLabModel
 

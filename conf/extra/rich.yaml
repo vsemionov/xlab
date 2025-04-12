@@ -1,6 +1,6 @@
 trainer:
   callbacks:
-    - class_path: xlabml.callbacks.XLabRichModelSummary
+    - class_path: XLabRichModelSummary
       init_args:
         max_depth: 5
-    - xlabml.callbacks.XLabRichProgressBar
+    - XLabRichProgressBar
