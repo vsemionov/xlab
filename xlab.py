@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import Any
 import multiprocessing
 
 import torch
@@ -45,13 +46,8 @@ class XLabTrainer(Trainer):
 class XLabCLI(LightningCLI):
     data_subcommands = {'compute_stats'}
 
-    def __init__(self, model_class=None, datamodule_class=None, trainer_class=XLabTrainer, **kwargs):
-        super().__init__(
-            model_class=model_class,
-            datamodule_class=datamodule_class,
-            trainer_class=trainer_class,
-            **kwargs
-        )
+    def __init__(self, *args: Any, trainer_class: type[XLabTrainer] = XLabTrainer, **kwargs: Any):
+        super().__init__(*args, trainer_class=trainer_class, **kwargs)
 
     @classmethod
     def subcommands(cls):
