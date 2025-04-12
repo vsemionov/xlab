@@ -102,6 +102,16 @@ To export a "clean" checkpoint, containing only the weights and vocabulary, run:
 ./manage.py export-checkpoint CHECKPOINT_PATH
 ```
 
+### Other actions
+#### Computing dataset statistics
+```shell
+./xlab.py compute_stats -c conf/xlab.yaml
+```
+#### Clearing the dataset cache
+```shell
+./manage.py clear-cache
+```
+
 ### Configuration
 All configuration and hyperparameters are exposed in YAML files, passed to the training/validation script.
 Hyperparameters are saved in checkpoints and automatically restored when loading.
