@@ -38,7 +38,7 @@ def main():
     delattr(XLabModule, 'configure_optimizers')  # prevents a warning that method will be overridden by configuration
 
     parser_kwargs = {stage: {'default_config_files': [Path(__file__).parent / 'conf' / f'defaults.yaml']}
-        for stage in ['fit', 'validate', 'test', 'predict']}
+        for stage in XLabCLI.subcommands()}
 
     XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
 
