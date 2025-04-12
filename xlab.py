@@ -18,14 +18,46 @@ from pathlib import Path
 import multiprocessing
 
 import torch
+from lightning.pytorch.trainer import Trainer
 from lightning.pytorch.cli import LightningCLI
 
 from xlabml.callbacks import *  # noqa
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModule, XLabModel
+from xlabml.stats import compute_stats
+
+
+class XLabTrainer(Trainer):
+    def compute_stats(self, datamodule, split: str = 'train', sample_size: int = 10_000, **kwargs):
+        """Compute dataset statistics"""
+        datamodule.prepare_data()
+        dataset = datamodule.datasets[split].dataset
+        stats = compute_stats(dataset, sample_size=sample_size)
+        print(f'Split: {split}')
+        print(f'Size: {len(dataset):,} texts, {stats["size_est"]:,} tokens (est.)')
+        print(
+            f'Text length: {stats["length_mean"]:,.1f}'
+            f' ({stats["length_median"]:,.1f})'
+            f' ± {stats["length_std"]:,.1f} tokens'
+        )
 
 
 class XLabCLI(LightningCLI):
+    def __init__(self, model_class=None, datamodule_class=None, trainer_class=XLabTrainer, **kwargs):
+        super().__init__(
+            model_class=model_class,
+            datamodule_class=datamodule_class,
+            trainer_class=trainer_class,
+            **kwargs
+        )
+
+    @classmethod
+    def subcommands(cls):
+        return {
+            **super().subcommands(),
+            'compute_stats': {'datamodule'},
+        }
+
     def add_arguments_to_parser(self, parser):
         parser.link_arguments('data.max_tokens', 'model.n_vocab')
         parser.link_arguments('model.max_len', 'data.seq_len')
