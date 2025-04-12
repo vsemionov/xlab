@@ -28,7 +28,7 @@ from xlabml.stats import compute_stats
 
 
 class XLabTrainer(Trainer):
-    def compute_stats(self, datamodule, split: str = 'train', sample_size: int = 10_000, **kwargs):
+    def compute_stats(self, model, datamodule, split: str = 'train', sample_size: int = 10_000):
         """Compute dataset statistics"""
         datamodule.prepare_data()
         dataset = datamodule.datasets[split].dataset
@@ -55,7 +55,7 @@ class XLabCLI(LightningCLI):
     def subcommands(cls):
         return {
             **super().subcommands(),
-            'compute_stats': {'datamodule'},
+            'compute_stats': {'model', 'datamodule'},
         }
 
     def add_arguments_to_parser(self, parser):
