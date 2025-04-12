@@ -29,14 +29,19 @@ from . import transformers
 
 class XLabModule(L.LightningModule, ABC):
     @abstractmethod
-    def __init__(self, n_vocab, max_len, d_model, pad_index: Optional[int], debug: bool = False, **kwargs):
+    def __init__(
+            self,
+            n_vocab, max_len, d_model, pad_index: Optional[int],
+            debug: bool = False, dummy: bool = False,
+            **kwargs
+    ):
         super().__init__()
         self.save_hyperparameters()
         self.model = transformers.GenerativeTextTransformer(
             n_vocab, max_len, d_model,
             pad_index=pad_index, pad_mask=False,
             **kwargs
-        )
+        ) if not dummy else nn.Linear(2, 2)
         self.pad_index = pad_index
         self.debug = debug
         if self.debug:
@@ -112,7 +117,7 @@ class XLabModel(XLabModule):
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
             block_drop: bool = True, attn_drop: bool = True, ff_drop: bool = True,
-            debug: bool = False
+            debug: bool = False, dummy: bool = False,
     ):
         super().__init__(
             n_vocab, max_len, d_model, pad_index=pad_index,
@@ -121,7 +126,7 @@ class XLabModel(XLabModule):
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
             block_drop=block_drop, attn_drop=attn_drop, ff_drop=ff_drop,
-            debug=debug
+            debug=debug, dummy=dummy,
         )
 
 
@@ -134,7 +139,7 @@ class XLabPyTorchModel(XLabModule):
             n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1, pos_drop: bool = True,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
             activation: nn.Module = nn.ReLU(),
-            debug: bool = False
+            debug: bool = False, dummy: bool = False,
     ):
         super().__init__(
             n_vocab, max_len, d_model, pad_index=pad_index,
@@ -142,5 +147,5 @@ class XLabPyTorchModel(XLabModule):
             n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout, pos_drop=pos_drop,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
             activation=activation,
-            debug=debug
+            debug=debug, dummy=dummy,
         )

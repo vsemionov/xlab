@@ -43,6 +43,8 @@ class XLabTrainer(Trainer):
 
 
 class XLabCLI(LightningCLI):
+    data_subcommands = {'compute_stats'}
+
     def __init__(self, model_class=None, datamodule_class=None, trainer_class=XLabTrainer, **kwargs):
         super().__init__(
             model_class=model_class,
@@ -70,8 +72,16 @@ def main():
     multiprocessing.set_start_method('fork')  # needed on macos
     delattr(XLabModule, 'configure_optimizers')  # prevents a warning that method will be overridden by configuration
 
-    defaults_path = Path(__file__).parent / 'conf' / 'defaults.yaml'
-    parser_kwargs = {subcommand: {'default_config_files': [defaults_path]} for subcommand in XLabCLI.subcommands()}
+    conf_dir = Path(__file__).parent / 'conf'
+    parser_kwargs = {
+        subcommand: {
+            'default_config_files': [
+                conf_dir / 'defaults.yaml',
+                *([conf_dir / 'extra/dummy.yaml'] if subcommand in XLabCLI.data_subcommands else []),
+            ]
+        }
+        for subcommand in XLabCLI.subcommands()
+    }
 
     XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
 
