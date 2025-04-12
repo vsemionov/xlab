@@ -19,49 +19,9 @@ import multiprocessing
 
 import torch
 from lightning.pytorch.cli import LightningCLI
-from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar, RichModelSummary
-from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 
-from xlabml.config import THEME_COLOR
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModule, XLabModel
-
-
-class ProgressMixin:
-    def __init__(self, abbreviate=False, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.abbreviate = abbreviate
-
-    def get_metrics(self, *args, **kwargs):
-        items = super().get_metrics(*args, **kwargs)
-        items.pop('v_num', None)
-        if self.abbreviate:
-            for metric in list(items):
-                abbrev = ''.join(word[0] for word in metric.split('_'))
-                assert abbrev not in items
-                items[abbrev] = items.pop(metric)
-        return items
-
-
-class XLabTQDMProgressBar(ProgressMixin, TQDMProgressBar):
-    def __init__(self, abbreviate: bool = True, refresh_rate: int = 1, leave: bool = False):
-        super().__init__(abbreviate=abbreviate, refresh_rate=refresh_rate, leave=leave)
-
-
-class XLabRichProgressBar(ProgressMixin, RichProgressBar):
-    def __init__(self, abbreviate: bool = False, refresh_rate: int = 1, leave: bool = False):
-        # workaround for failing config validation
-        theme = RichProgressBarTheme(
-            progress_bar=THEME_COLOR,
-            progress_bar_finished=THEME_COLOR,
-            progress_bar_pulse=THEME_COLOR
-        )
-        super().__init__(abbreviate=abbreviate, refresh_rate=refresh_rate, leave=leave, theme=theme)
-
-
-class XLabRichModelSummary(RichModelSummary):
-    def __init__(self, max_depth: int = 1):
-        super().__init__(max_depth=max_depth, header_style='bold')
 
 
 class XLabCLI(LightningCLI):
