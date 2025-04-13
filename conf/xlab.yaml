@@ -35,7 +35,7 @@ data:
     predict: 0  # use remainder
   column: text
   num_tokens: 32768
-  tokenizer_path: tokenizers/xlab.pt
+  tokenizer_path: tokenizers/tokenizer.pt
   tokenizer_train_args:
     tokenizer: basic_english
     language: en
