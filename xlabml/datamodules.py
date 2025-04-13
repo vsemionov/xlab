@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 from typing import Optional, Union
 import warnings
 
@@ -34,12 +35,9 @@ class XLabDataModule(L.LightningDataModule):
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
             column: str = 'text',
-            tokenizer_trainer: TokenizerTrainer = TokenizerTrainer(
-                save_path='tokenizers/default.pt',
-                tokenizer='basic_english',
-                language='en',
-                num_tokens=10_000,
-            ),
+            num_tokens: int = 10_000,
+            tokenizer_path: Path = Path('tokenizers/default.pt'),
+            tokenizer_train_args: dict = {'tokenizer': 'basic_english', 'language': 'en'},
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
@@ -52,7 +50,9 @@ class XLabDataModule(L.LightningDataModule):
         self.name = name
         self.splits = splits
         self.column = column
-        self.tokenizer_trainer = tokenizer_trainer
+        self.num_tokens = num_tokens
+        self.tokenizer_path = tokenizer_path
+        self.tokenizer_trainer = TokenizerTrainer(**tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
         self.num_proc = num_proc
         self.progress = progress
@@ -66,11 +66,11 @@ class XLabDataModule(L.LightningDataModule):
 
     def _create_tokenizer(self, dataset):
         try:
-            tokenizer = Tokenizer.load(self.tokenizer_trainer.save_path)
+            tokenizer = Tokenizer.load(self.tokenizer_path)
         except FileNotFoundError:
             texts = parallelize(dataset, n_jobs=self.num_proc)
             texts = progress_bar(texts, kind=self.progress, total=len(dataset), desc='Training tokenizer')
-            tokenizer = self.tokenizer_trainer.train(texts)
+            tokenizer = self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
         return tokenizer
 
     def create_datasets_and_tokenizer(self, splits=None, tokenizer_only=False):
@@ -92,7 +92,7 @@ class XLabDataModule(L.LightningDataModule):
         if self.tokenizer is None:
             self.tokenizer = self._create_tokenizer(text_datasets['train'])
             vocab_size = len(self.tokenizer)
-            num_tokens = self.tokenizer_trainer.num_tokens
+            num_tokens = self.num_tokens
             if vocab_size < num_tokens:
                 warnings.warn(
                     f'Tokenizer vocabulary has size {vocab_size}, which is less than the configured {num_tokens}. '

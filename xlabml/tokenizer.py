@@ -72,21 +72,20 @@ class Tokenizer:
 
 
 class TokenizerTrainer:
-    def __init__(self, save_path: Union[Path, str], tokenizer: str, language: str = 'en', num_tokens: int = 10_000):
-        self.save_path = Path(save_path)
+    def __init__(self, tokenizer: str = 'basic_english', language: str = 'en'):
         self.tokenizer = tokenizer
         self.language = language
-        self.num_tokens = num_tokens
 
-    def train(self, texts: Iterable[str]) -> Tokenizer:
+    def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
         tokenizer = get_tokenizer(self.tokenizer, self.language)
         batches = (tokenizer(text) for text in texts)
-        vocab = build_vocab_from_iterator(batches, specials=Tokenizer.specials, max_tokens=self.num_tokens)
+        vocab = build_vocab_from_iterator(batches, specials=Tokenizer.specials, max_tokens=num_tokens)
         vocab.set_default_index(vocab[Tokenizer.unk_token])
         tokenizer = Tokenizer(tokenizer, vocab)
-        self.save_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(tokenizer, self.save_path)
-        print(f'Saved tokenizer to: {self.save_path}')
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(tokenizer, save_path)
+        print(f'Saved tokenizer to: {save_path}')
         return tokenizer
 
     @staticmethod

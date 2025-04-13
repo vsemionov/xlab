@@ -20,6 +20,7 @@ import warnings
 import torch
 import click
 
+from xlabml.tokenizer import Tokenizer
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModel
 from xlabml import inference
@@ -28,11 +29,12 @@ from xlabml import inference
 @click.command()
 @click.argument('checkpoint_path', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument('prompt')
+@click.option('-t', '--tokenizer', 'tokenizer_path', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('-c', '--continued', is_flag=True)
 @click.option('-d', '--device', type=click.Choice(['auto', 'cuda', 'cpu']), default='auto')
 @click.option('-n', '--runs', type=click.IntRange(min=1), default=1)
 @click.option('-l', '--limit', type=click.IntRange(min=1), default=100)
-@click.option('-t', '--temperature', type=click.FloatRange(min=0, min_open=True), default=1)
+@click.option('-T', '--temperature', type=click.FloatRange(min=0, min_open=True), default=1)
 @click.option('-k', '--top-k', type=click.IntRange(min=1))
 @click.option('-p', '--top-p', type=click.FloatRange(min=0, max=1, min_open=True))
 @click.option('-s', '--seed', type=int)
@@ -41,7 +43,7 @@ from xlabml import inference
 @click.option('-z', '--length-penalty', type=float, default=0)
 @click.option('--debug', is_flag=True)
 def main(
-        checkpoint_path, prompt, continued, device,
+        checkpoint_path, prompt, tokenizer_path, continued, device,
         runs, limit, temperature, top_k, top_p, seed,
         beam_search, beam_width, length_penalty,
         debug
@@ -51,8 +53,10 @@ def main(
     if device == 'auto':
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    datamodule = XLabDataModule.load_from_checkpoint(checkpoint_path, map_location=device)
-    tokenizer = datamodule.tokenizer
+    if tokenizer_path is None:
+        datamodule = XLabDataModule.load_from_checkpoint(checkpoint_path, map_location=device)
+        tokenizer_path = datamodule.tokenizer_path
+    tokenizer = Tokenizer.load(tokenizer_path)
 
     with warnings.catch_warnings():
         if not debug:

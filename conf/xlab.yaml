@@ -34,13 +34,11 @@ data:
     test: 0.025
     predict: 0  # use remainder
   column: text
-  tokenizer_trainer:
-    class_path: xlabml.tokenizer.TokenizerTrainer
-    init_args:
-      save_path: tokenizers/xlab.pt
-      tokenizer: basic_english
-      language: en
-      num_tokens: 32768
+  num_tokens: 32768
+  tokenizer_path: tokenizers/xlab.pt
+  tokenizer_train_args:
+    tokenizer: basic_english
+    language: en
   num_proc: 4
   progress: tqdm
   step_size: 0.5

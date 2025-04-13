@@ -40,7 +40,6 @@ def export_checkpoint(checkpoint_path):
         'state_dict',
         'hyper_parameters',
         'datamodule_hyper_parameters',
-        'XLabDataModule'
     ]
     checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
     checkpoint = {k: checkpoint[k] for k in checkpoint_keys}

@@ -31,8 +31,8 @@ from xlabml.stats import compute_stats
 class XLabTrainer(Trainer):
     def train_tokenizer(self, model, datamodule: XLabDataModule):
         """Train the tokenizer"""
-        if datamodule.tokenizer_trainer.save_path.exists():
-            print(f'Tokenizer already exists: {datamodule.tokenizer_trainer.save_path}')
+        if datamodule.tokenizer_path.exists():
+            print(f'Tokenizer already exists: {datamodule.tokenizer_path}')
             return
         datamodule.create_datasets_and_tokenizer(['train'], tokenizer_only=True)
 
@@ -66,7 +66,7 @@ class XLabCLI(LightningCLI):
 
     def add_arguments_to_parser(self, parser):
         parser.link_arguments('model.max_len', 'data.seq_len')
-        parser.link_arguments('data.tokenizer_trainer.num_tokens', 'model.n_vocab', apply_on='instantiate')
+        parser.link_arguments('data.num_tokens', 'model.n_vocab')
         parser.link_arguments('data.tokenizer_trainer', 'model.pad_index',
             lambda tokenizer_trainer: tokenizer_trainer.get_pad_index(), apply_on='instantiate')
 
