@@ -24,7 +24,6 @@ from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
 from .datasets import TextDataset, TokenDataset, ChunkDataset, parallelize
-from .utils import progress_bar
 
 
 class XLabDataModule(L.LightningDataModule):
@@ -36,8 +35,8 @@ class XLabDataModule(L.LightningDataModule):
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
             column: str = 'text',
             num_tokens: int = 10_000,
-            tokenizer_path: Path = Path('tokenizers/default.pt'),
-            tokenizer_train_args: dict = {'tokenizer': 'basic_english', 'language': 'en'},
+            tokenizer_path: Path = Path('tokenizers/default.model'),
+            tokenizer_train_args: dict = TokenizerTrainer().train_args,
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
@@ -69,7 +68,6 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer = Tokenizer.load(self.tokenizer_path)
         except FileNotFoundError:
             texts = parallelize(dataset, n_jobs=self.num_proc)
-            texts = progress_bar(texts, kind=self.progress, total=len(dataset), desc='Training tokenizer')
             tokenizer = self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
         return tokenizer
 

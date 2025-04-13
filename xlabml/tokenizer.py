@@ -12,81 +12,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from pathlib import Path
-from typing import Union, Iterable, Callable
+from typing import Union, Iterable
 
-import torch
-
-from torchtext.data.utils import get_tokenizer
-from torchtext.vocab import Vocab, build_vocab_from_iterator
+import sentencepiece as spm
 
 class Tokenizer:
-    pad_token = '<pad>'
+    unk_token = '<unk>'
     sos_token = '<sos>'
     eos_token = '<eos>'
-    unk_token = '<unk>'
-    specials = [pad_token, sos_token, eos_token, unk_token]
+    pad_token = '<pad>'
+    specials = [unk_token, sos_token, eos_token, pad_token]
 
-    def __init__(self, tokenizer: Callable[[str], list[str]], vocab: Vocab):
-        self.tokenizer = tokenizer
-        self.vocab = vocab
-        self._escape_pattern = re.compile(rf"({'|'.join(self.specials)})")
-        self._unescape_pattern = re.compile(rf"#({'|'.join(self.specials)})")
-
-    def _escape(self, text):
-        return self._escape_pattern.sub(r'#\1', text)
-
-    def _unescape(self, text):
-        return self._unescape_pattern.sub(r'\1', text)
-
-    def _tokenize(self, text: str) -> list[str]:
-        return self.tokenizer(self._escape(text))
-
-    def _detokenize(self, tokens: list[str]) -> str:
-        return self._unescape(' '.join(tokens))
-
-    def _index(self, tokens: list[str]) -> list[int]:
-        return self.vocab.lookup_indices(tokens)
-
-    def _deindex(self, indices: list[int]) -> list[str]:
-        return self.vocab.lookup_tokens(indices)
+    def __init__(self, processor: spm.SentencePieceProcessor):
+        self.processor = processor
+        for index, token in enumerate(self.specials):
+            assert self[token] == index
 
     def encode(self, text: str) -> list[int]:
-        return self._index(self._tokenize(text))
+        return self.processor.encode(text)
 
     def decode(self, indices: list[int]) -> str:
-        return self._detokenize(self._deindex(indices))
+        return self.processor.decode(indices)
 
     def __getitem__(self, token: str) -> int:
-        return self.vocab[token]
+        return self.processor.piece_to_id(token)
 
     def __len__(self) -> int:
-        return len(self.vocab)
+        return self.processor.get_piece_size()
 
     @staticmethod
     def load(path: Union[Path, str]) -> 'Tokenizer':
-        tokenizer = torch.load(path, weights_only=False)
-        assert isinstance(tokenizer, Tokenizer)
-        return tokenizer
+        processor = spm.SentencePieceProcessor()
+        try:
+            processor.load(str(path))
+        except OSError as e:
+            raise FileNotFoundError from e
+        return Tokenizer(processor)
 
 
 class TokenizerTrainer:
-    def __init__(self, tokenizer: str = 'basic_english', language: str = 'en'):
-        self.tokenizer = tokenizer
-        self.language = language
+    def __init__(
+            self,
+            train_args: dict = {
+            }
+    ):
+        self.train_args = train_args
 
     def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
-        tokenizer = get_tokenizer(self.tokenizer, self.language)
-        batches = (tokenizer(text) for text in texts)
-        vocab = build_vocab_from_iterator(batches, specials=Tokenizer.specials, max_tokens=num_tokens)
-        vocab.set_default_index(vocab[Tokenizer.unk_token])
-        tokenizer = Tokenizer(tokenizer, vocab)
         save_path = Path(save_path)
+        assert save_path.name.endswith('.model')
+        assert not save_path.exists()
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(tokenizer, save_path)
-        print(f'Saved tokenizer to: {save_path}')
-        return tokenizer
+        sentences = (line for text in texts for line in text.split('\n') if line)
+        kwargs = {
+            **self.train_args,
+            'input_format': 'text',
+            'model_prefix': save_path.parent / save_path.stem,
+            'vocab_size': num_tokens,
+            'unk_id': Tokenizer.specials.index(Tokenizer.unk_token),
+            'bos_id': Tokenizer.specials.index(Tokenizer.sos_token),
+            'eos_id': Tokenizer.specials.index(Tokenizer.eos_token),
+            'pad_id': Tokenizer.specials.index(Tokenizer.pad_token),
+            'unk_piece': Tokenizer.unk_token,
+            'bos_piece': Tokenizer.sos_token,
+            'eos_piece': Tokenizer.eos_token,
+            'pad_piece': Tokenizer.pad_token,
+        }
+        spm.SentencePieceTrainer.train(sentence_iterator=sentences, **kwargs)
+        return Tokenizer.load(save_path)
 
     @staticmethod
     def get_pad_index() -> int:

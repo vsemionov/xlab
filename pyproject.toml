@@ -16,12 +16,12 @@ dependencies = [
     "joblib",
     "jsonargparse[signatures]",
     "lightning",
-    "numpy<2.0",
+    "numpy",
     "platformdirs",
     "rich",
-    "torch<2.3",
+    "sentencepiece",
+    "torch",
     "torchdata",
-    "torchtext",
     "tqdm",
 ]
 

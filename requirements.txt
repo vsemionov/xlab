@@ -7,14 +7,14 @@ jsonargparse[signatures]
 jupyter
 lightning
 matplotlib
-numpy<2.0
+numpy
 omegaconf
 pandas
 platformdirs
 rich
 seaborn
+sentencepiece
 tensorboard
-torch<2.3
+torch
 torchdata
-torchtext
 tqdm

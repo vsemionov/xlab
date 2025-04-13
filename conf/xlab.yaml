@@ -35,10 +35,8 @@ data:
     predict: 0  # use remainder
   column: text
   num_tokens: 32768
-  tokenizer_path: tokenizers/tokenizer.pt
+  tokenizer_path: tokenizers/tokenizer.model
   tokenizer_train_args:
-    tokenizer: basic_english
-    language: en
   num_proc: 4
   progress: tqdm
   step_size: 0.5
