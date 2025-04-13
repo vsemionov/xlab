@@ -38,6 +38,7 @@ download the `.pt` file(s) from the project's releases.
 ### Using in your code
 ```python
 import torch
+from xlabml.tokenizer import Tokenizer
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModel
 from xlabml import inference
@@ -48,7 +49,8 @@ prompt = 'april'
 device = 'cuda'
 limit = 10
 
-tokenizer = XLabDataModule.load_from_checkpoint(checkpoint_path, map_location=device).tokenizer
+tokenizer_path = XLabDataModule.load_from_checkpoint(checkpoint_path, map_location=device).tokenizer_path
+tokenizer = Tokenizer.load(tokenizer_path)
 model = XLabModel.load_from_checkpoint(checkpoint_path, map_location=device).eval().requires_grad_(False)
 inputs = torch.tensor([tokenizer[tokenizer.sos_token]] + tokenizer.encode(prompt), device=model.device)
 outputs = inference.sample(
@@ -71,7 +73,13 @@ Specifying `-c conf/xlab.yaml` tells the training script to use a larger dataset
 This will also download and pre-process the dataset, as well as train the tokenizer, which takes about 2 hours total.
 The actual training takes about 10 hours per epoch on an A100 GPU.
 For hardware with less memory, you may need to modify the configuration and decrease the context size and/or batch size.
-By default, the learning curves are saved in TensorBoard format, and you can monitor them by running:
+By default, the following are saved during training:
+ - the tokenizer, in the `tokenizers` directory
+ - the configuration and hyperparameters, in YAML format under `logs/version_*`
+ - learning curves, in TensorBoard format under `logs/version_*`
+ - model checkpoints, in `logs/version_*/checkpoints`
+
+You can view the learning curves by running:
 ```shell
 tensorboard --logdir .
 ```
@@ -93,16 +101,20 @@ The default generation strategy is multinomial sampling, but beam search can als
 Options exist for configuring the algorithms (e.g. temperature, top-k, top-p, beam width, etc).
 To see all inference options, run `./infer.py --help`.
 
-### Exporting model weights and tokenizer vocabulary
+### Exporting model weights and hyperparameters
 Checkpoints created during training contain not only the model weights,
 but also the optimizer state and other information needed to resume training from a saved checkpoint.
 This makes the checkpoints 3x larger than the actual model weights.
-To export a "clean" checkpoint, containing only the weights and vocabulary, run:
+To export a "clean" checkpoint, containing only the weights and hyperparameters, run:
 ```shell
 ./manage.py export-checkpoint CHECKPOINT_PATH
 ```
 
 ### Other actions
+#### Training the tokenizer only
+```shell
+./xlab.py train_tokenizer -c conf/xlab.yaml
+```
 #### Computing dataset statistics
 ```shell
 ./xlab.py compute_stats -c conf/xlab.yaml
