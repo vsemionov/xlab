@@ -13,8 +13,10 @@
 # limitations under the License.
 
 import re
-from typing import Optional, Iterable
-import warnings
+from pathlib import Path
+from typing import Union, Iterable, Callable
+
+import torch
 
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import Vocab, build_vocab_from_iterator
@@ -26,10 +28,9 @@ class Tokenizer:
     unk_token = '<unk>'
     specials = [pad_token, sos_token, eos_token, unk_token]
 
-    def __init__(self, tokenizer: str, language: str = 'en', max_tokens: int = 10_000):
-        self.tokenizer = get_tokenizer(tokenizer, language=language)
-        self.max_tokens = max_tokens
-        self.vocab: Optional[Vocab] = None
+    def __init__(self, tokenizer: Callable[[str], list[str]], vocab: Vocab):
+        self.tokenizer = tokenizer
+        self.vocab = vocab
         self._escape_pattern = re.compile(rf"({'|'.join(self.specials)})")
         self._unescape_pattern = re.compile(rf"#({'|'.join(self.specials)})")
 
@@ -39,40 +40,55 @@ class Tokenizer:
     def _unescape(self, text):
         return self._unescape_pattern.sub(r'\1', text)
 
-    def tokenize(self, text: str) -> list[str]:
+    def _tokenize(self, text: str) -> list[str]:
         return self.tokenizer(self._escape(text))
 
-    def detokenize(self, tokens: list[str]) -> str:
+    def _detokenize(self, tokens: list[str]) -> str:
         return self._unescape(' '.join(tokens))
 
-    def index(self, tokens: list[str]) -> list[int]:
+    def _index(self, tokens: list[str]) -> list[int]:
         return self.vocab.lookup_indices(tokens)
 
-    def deindex(self, indices: list[int]) -> list[str]:
+    def _deindex(self, indices: list[int]) -> list[str]:
         return self.vocab.lookup_tokens(indices)
 
     def encode(self, text: str) -> list[int]:
-        return self.index(self.tokenize(text))
+        return self._index(self._tokenize(text))
 
     def decode(self, indices: list[int]) -> str:
-        return self.detokenize(self.deindex(indices))
-
-    def __call__(self, text: str) -> list[str]:
-        return self.tokenize(text)
+        return self._detokenize(self._deindex(indices))
 
     def __getitem__(self, token: str) -> int:
         return self.vocab[token]
 
-    def build_vocab(self, batches: Iterable[list[str]]) -> 'Tokenizer':
-        self.vocab = build_vocab_from_iterator(batches, specials=self.specials, max_tokens=self.max_tokens)
-        self.vocab.set_default_index(self.vocab[self.unk_token])
-        if len(self.vocab) < self.max_tokens:
-            warnings.warn(
-                f'Built vocabulary has size {len(self.vocab)}, which is less than the maximum {self.max_tokens}. '
-                f'Model dimensions are linked to the maximum size, which is incorrect.'
-            )
-        return self
+    def __len__(self) -> int:
+        return len(self.vocab)
 
-    def reset_vocab(self) -> 'Tokenizer':
-        self.vocab = None
-        return self
+    @staticmethod
+    def load(path: Union[Path, str]) -> 'Tokenizer':
+        tokenizer = torch.load(path, weights_only=False)
+        assert isinstance(tokenizer, Tokenizer)
+        return tokenizer
+
+
+class TokenizerTrainer:
+    def __init__(self, save_path: Union[Path, str], tokenizer: str, language: str = 'en', num_tokens: int = 10_000):
+        self.save_path = Path(save_path)
+        self.tokenizer = tokenizer
+        self.language = language
+        self.num_tokens = num_tokens
+
+    def train(self, texts: Iterable[str]) -> Tokenizer:
+        tokenizer = get_tokenizer(self.tokenizer, self.language)
+        batches = (tokenizer(text) for text in texts)
+        vocab = build_vocab_from_iterator(batches, specials=Tokenizer.specials, max_tokens=self.num_tokens)
+        vocab.set_default_index(vocab[Tokenizer.unk_token])
+        tokenizer = Tokenizer(tokenizer, vocab)
+        self.save_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(tokenizer, self.save_path)
+        print(f'Saved tokenizer to: {self.save_path}')
+        return tokenizer
+
+    @staticmethod
+    def get_pad_index() -> int:
+        return Tokenizer.specials.index(Tokenizer.pad_token)

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 from typing import Optional, Union
 import warnings
 
@@ -26,106 +25,61 @@ from .tokenizer import Tokenizer
 from .utils import progress_bar, cached
 
 
-def fingerprint(dataset):
-    return dataset._fingerprint
-
-
-def parallelize(dataset, column=None, n_jobs=1, threaded=False):
-    batch_size = 1000
-    prefer = 'threads' if threaded else 'processes'
-    parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer=prefer)
-    batches = parallel(
-        delayed(dataset.__getitem__)(slice(start, start + batch_size))
-        for start in range(0, len(dataset), batch_size)
-    )
-    samples = (sample for batch in batches for sample in (batch[column] if column is not None else batch))
-    return samples
-
-
 class TextDataset(data.Dataset):
     def __init__(
             self,
             path: str, name: Optional[str],
             splits: dict[str, float], split: str,
-            tokenizer: Tokenizer,
             column: str = 'text',
-            num_proc: int = 4, quiet: bool = False,
-            progress: str = 'tqdm',
-            keep_text: bool = False,
-            keep_tokens: bool = False,
+            quiet: bool = False,
     ):
         super().__init__()
-        self.quiet = quiet
         self.column = column
-        self.num_proc = num_proc
-        self.progress = progress
-        self.tokenizer = tokenizer
-        self.keep_text = keep_text
-        self.keep_tokens = keep_tokens
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
-        splits = self._split(dataset, splits)
-        splits = {name: self._tokenize(split, tokenizer) for name, split in splits.items()}
-        if tokenizer.vocab is None:
-            train_set = splits['train']
-            tokenizer.vocab = cached(lambda: self._build_vocab(train_set, tokenizer), 'vocab', fingerprint(train_set))
-        splits = {name: self._index(split, tokenizer) for name, split in splits.items()}
-        self.dataset = splits[split].with_format('numpy', columns=['indices'], output_all_columns=True)
+        splits = _split(dataset, splits, quiet)
+        self.dataset = splits[split]
 
-    def _split(self, dataset, splits):
-        if isinstance(dataset, (datasets.DatasetDict, datasets.IterableDatasetDict)):
-            dataset = datasets.concatenate_datasets(list(dataset.values()))
-        total = len(dataset)
-        results = {}
-        for name, size in splits.items():
-            if size > 0:
-                size = int(size * total) if isinstance(size, float) else size
-                split, dataset = dataset.train_test_split(train_size=size, seed=42).values()
-            else:
-                split, dataset = dataset, []
-            results[name] = split
-        if not self.quiet:
-            print(f'Splits: { {name: len(split) for name, split in results.items() } }')
-            if len(dataset) > 0:
-                warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
-        return results
+    def __len__(self):
+        return len(self.dataset)
 
-    def _tokenize(self, dataset, tokenizer):
-        def tokenize(row):
-            row['tokens'] = tokenizer(row[column])
+    def __getitem__(self, idx):
+        return self.dataset[idx][self.column]
+
+
+class TokenDataset(data.Dataset):
+    def __init__(
+            self,
+            dataset: TextDataset,
+            tokenizer: Tokenizer,
+            num_proc: int = 4,
+    ):
+        super().__init__()
+        self.column = 'indices'
+        self.parent = dataset
+        self.tokenizer = tokenizer
+        dataset = self._encode(self.parent, tokenizer, num_proc)
+        self.dataset = dataset.with_format('numpy', columns=[self.column], output_all_columns=True)
+
+    def _encode(self, dataset, tokenizer, num_proc):
+        def encode(row):
+            row[self.column] = tokenizer.encode(row[dataset.column])
             return row
-        column = self.column
-        remove_columns = [] if self.keep_text else [column]
-        tokenizer = copy.copy(tokenizer).reset_vocab()  # discard vocabulary state to prevent cache misses
-        dataset = dataset.map(tokenize, remove_columns=remove_columns, num_proc=self.num_proc, desc='Tokenizing')
-        return dataset
-
-    def _build_vocab(self, dataset, tokenizer):
-        samples = parallelize(dataset, column='tokens', n_jobs=self.num_proc)
-        batches = progress_bar(samples, kind=self.progress, total=len(dataset), desc='Building vocabulary')
-        return tokenizer.build_vocab(batches).vocab
-
-    def _index(self, dataset, tokenizer):
-        def index(row):
-            row['indices'] = tokenizer.index(row['tokens'])
-            return row
-        remove_columns = [] if self.keep_tokens else ['tokens']
-        dataset = dataset.map(index, remove_columns=remove_columns, num_proc=self.num_proc, desc='Indexing')
+        dataset = dataset.dataset.map(encode, remove_columns=[dataset.column], num_proc=num_proc, desc='Encoding')
         return dataset
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        return self.dataset[idx]['indices']
+        return self.dataset[idx][self.column]
 
 
 class ChunkDataset(data.Dataset):
     def __init__(
             self,
-            dataset: TextDataset,
+            dataset: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
-            num_proc: int = 4,
-            progress: str = 'tqdm'
+            num_proc: int = 4, progress: str = 'tqdm',
     ):
         super().__init__()
         self.dataset = dataset
@@ -134,12 +88,13 @@ class ChunkDataset(data.Dataset):
         assert 0 < self.step_size <= self.seq_len
         self.num_proc = num_proc
         self.progress = progress
-        self.index = cached(lambda: self._chunk(dataset), 'index', fingerprint(dataset.dataset))
+        self.index = cached(lambda: self._chunk(dataset), 'index', _fingerprint(dataset.dataset))
 
     def _chunk(self, dataset):
         index = []
-        samples = parallelize(dataset, n_jobs=self.num_proc, threaded=True)
-        for idx, indices in enumerate(progress_bar(samples, kind=self.progress, total=len(dataset), desc='Chunking')):
+        encodings = parallelize(dataset, n_jobs=self.num_proc, threaded=True)
+        encodings = progress_bar(encodings, kind=self.progress, total=len(dataset), desc='Indexing')
+        for idx, indices in enumerate(encodings):
             index.extend([(idx, start) for start in range(0, len(indices) + 1, self.step_size)])  # 1 accounts for <sos>
         # use smaller dtypes to save memory; can be further optimized by using a separate array for the small 2nd index
         dtype = np.uint32 if len(dataset) < 2**32 else np.uint64
@@ -172,3 +127,38 @@ class ChunkDataset(data.Dataset):
         indices = torch.from_numpy(indices)
         x, y = indices[:-1], indices[1:]
         return x, y
+
+
+def _split(dataset, splits, quiet):
+    if isinstance(dataset, (datasets.DatasetDict, datasets.IterableDatasetDict)):
+        dataset = datasets.concatenate_datasets(list(dataset.values()))
+    total = len(dataset)
+    results = {}
+    for name, size in splits.items():
+        if size > 0:
+            size = int(size * total) if isinstance(size, float) else size
+            split, dataset = dataset.train_test_split(train_size=size, seed=42).values()
+        else:
+            split, dataset = dataset, []
+        results[name] = split
+    if not quiet:
+        print(f'Splits: { {name: len(split) for name, split in results.items()} }')
+        if len(dataset) > 0:
+            warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
+    return results
+
+
+def _fingerprint(dataset):
+    return dataset._fingerprint
+
+
+def parallelize(dataset, n_jobs=1, threaded=False):
+    batch_size = 1000
+    prefer = 'threads' if threaded else 'processes'
+    parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer=prefer)
+    batches = parallel(
+        delayed(dataset.__getitem__)(slice(start, start + batch_size))
+        for start in range(0, len(dataset), batch_size)
+    )
+    samples = (sample for batch in batches for sample in batch)
+    return samples

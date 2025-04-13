@@ -1,9 +1,9 @@
 import numpy as np
 
-from .datasets import TextDataset
+from .datasets import TokenDataset
 
 
-def compute_stats(dataset: TextDataset, sample_size: int = 10_000):
+def compute_stats(dataset: TokenDataset, sample_size: int = 10_000):
     np.random.seed(42)
     sample_indices = np.random.permutation(min(sample_size, len(dataset)))
     sample = dataset[sample_indices]

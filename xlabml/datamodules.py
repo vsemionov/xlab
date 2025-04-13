@@ -13,14 +13,17 @@
 # limitations under the License.
 
 from typing import Optional, Union
+import warnings
 
 import torch
 import torch.utils.data as data
 import lightning as L
 from torchdata.stateful_dataloader import StatefulDataLoader
+from boltons.setutils import IndexedSet
 
-from .tokenizer import Tokenizer
-from .datasets import TextDataset, ChunkDataset
+from .tokenizer import Tokenizer, TokenizerTrainer
+from .datasets import TextDataset, TokenDataset, ChunkDataset, parallelize
+from .utils import progress_bar
 
 
 class XLabDataModule(L.LightningDataModule):
@@ -30,8 +33,13 @@ class XLabDataModule(L.LightningDataModule):
             self,
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
-            tokenizer: str = 'basic_english', language: str = 'en', max_tokens: int = 10_000,
             column: str = 'text',
+            tokenizer_trainer: TokenizerTrainer = TokenizerTrainer(
+                save_path='tokenizers/default.pt',
+                tokenizer='basic_english',
+                language='en',
+                num_tokens=10_000,
+            ),
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
@@ -43,8 +51,9 @@ class XLabDataModule(L.LightningDataModule):
         self.path = path
         self.name = name
         self.splits = splits
-        self.tokenizer = Tokenizer(tokenizer, language=language, max_tokens=max_tokens)
         self.column = column
+        self.tokenizer_trainer = tokenizer_trainer
+        self.tokenizer: Optional[Tokenizer] = None
         self.num_proc = num_proc
         self.progress = progress
         self.seq_len = seq_len
@@ -55,28 +64,68 @@ class XLabDataModule(L.LightningDataModule):
         self.persistent_workers = persistent_workers
         self.datasets = {}
 
-    def _dataset(self, split, **kwargs):
-        text_dataset = TextDataset(
-            path=self.path, name=self.name,
-            splits=self.splits, split=split,
-            tokenizer=self.tokenizer,
-            column=self.column,
-            num_proc=self.num_proc,
-            progress=self.progress,
-            **kwargs
-        )
-        chunk_dataset = ChunkDataset(
-            text_dataset,
-            seq_len=self.seq_len, step_size=self.step_size,
-            num_proc=self.num_proc,
-            progress=self.progress,
-        )
-        return chunk_dataset
+    def _create_tokenizer(self, dataset):
+        try:
+            tokenizer = Tokenizer.load(self.tokenizer_trainer.save_path)
+        except FileNotFoundError:
+            texts = parallelize(dataset, n_jobs=self.num_proc)
+            texts = progress_bar(texts, kind=self.progress, total=len(dataset), desc='Training tokenizer')
+            tokenizer = self.tokenizer_trainer.train(texts)
+        return tokenizer
+
+    def create_datasets_and_tokenizer(self, splits=None, tokenizer_only=False):
+        splits = splits if splits is not None else list(self.splits)
+        assert 'train' in splits or self.tokenizer is not None
+
+        text_datasets = {
+            split: TextDataset(
+                path=self.path,
+                name=self.name,
+                splits=self.splits,
+                split=split,
+                column=self.column,
+                quiet=(i != 0),
+            )
+            for i, split in enumerate(splits)
+        }
+
+        if self.tokenizer is None:
+            self.tokenizer = self._create_tokenizer(text_datasets['train'])
+            vocab_size = len(self.tokenizer)
+            num_tokens = self.tokenizer_trainer.num_tokens
+            if vocab_size < num_tokens:
+                warnings.warn(
+                    f'Tokenizer vocabulary has size {vocab_size}, which is less than the configured {num_tokens}. '
+                    f'Model dimensions are linked to the configured size, which is incorrect.'
+                )
+            if vocab_size > num_tokens:
+                raise RuntimeError(
+                    f'Tokenizer vocabulary has size {vocab_size}, which is more than the configured {num_tokens}. '
+                    f'Model dimensions are linked to the configured size, which is incorrect.'
+                )
+        if tokenizer_only:
+            return None
+
+        token_datasets = {
+            split: TokenDataset(
+                dataset=text_dataset,
+                tokenizer=self.tokenizer,
+                num_proc=self.num_proc,
+            )
+            for split, text_dataset in text_datasets.items()
+        }
+        chunk_datasets = {
+            split: ChunkDataset(
+                dataset=token_dataset,
+                seq_len=self.seq_len, step_size=self.step_size,
+                num_proc=self.num_proc, progress=self.progress,
+            )
+            for split, token_dataset in token_datasets.items()
+        }
+        return chunk_datasets
 
     def prepare_data(self):
-        self.datasets['train'] = self._dataset('train')
-        for split in ['val', 'test', 'predict']:
-            self.datasets[split] = self._dataset(split, quiet=True)
+        self.datasets = self.create_datasets_and_tokenizer()
 
     def setup(self, stage):
         splits = {
@@ -86,9 +135,8 @@ class XLabDataModule(L.LightningDataModule):
             'predict': ['predict'],
         }
         self.datasets = {split: dataset for split, dataset in self.datasets.items() if split in splits[stage]}
-        for split in splits[stage]:
-            if split not in self.datasets:
-                self.datasets[split] = self._dataset(split, quiet=True)
+        new_splits = IndexedSet(splits[stage]) - self.datasets.keys()
+        self.datasets |= self.create_datasets_and_tokenizer(splits=new_splits)
 
     def train_dataloader(self):
         return StatefulDataLoader(
@@ -126,9 +174,3 @@ class XLabDataModule(L.LightningDataModule):
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
         )
-
-    def state_dict(self):
-        return {'vocab': self.tokenizer.vocab}
-
-    def load_state_dict(self, state_dict):
-        self.tokenizer.vocab = state_dict['vocab']

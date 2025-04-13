@@ -3,6 +3,7 @@
 /.vscode
 /venv
 /logs
+/tokenizers
 
 
 # Byte-compiled / optimized / DLL files

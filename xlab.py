@@ -29,7 +29,14 @@ from xlabml.stats import compute_stats
 
 
 class XLabTrainer(Trainer):
-    def compute_stats(self, model, datamodule, split: str = 'train', sample_size: int = 10_000):
+    def train_tokenizer(self, model, datamodule: XLabDataModule):
+        """Train the tokenizer"""
+        if datamodule.tokenizer_trainer.save_path.exists():
+            print(f'Tokenizer already exists: {datamodule.tokenizer_trainer.save_path}')
+            return
+        datamodule.create_datasets_and_tokenizer(['train'], tokenizer_only=True)
+
+    def compute_stats(self, model, datamodule: XLabDataModule, split: str = 'train', sample_size: int = 10_000):
         """Compute dataset statistics"""
         datamodule.prepare_data()
         dataset = datamodule.datasets[split].dataset
@@ -54,13 +61,14 @@ class XLabCLI(LightningCLI):
         return {
             **super().subcommands(),
             'compute_stats': {'model', 'datamodule'},
+            'train_tokenizer': {'model', 'datamodule'},
         }
 
     def add_arguments_to_parser(self, parser):
-        parser.link_arguments('data.max_tokens', 'model.n_vocab')
         parser.link_arguments('model.max_len', 'data.seq_len')
-        parser.link_arguments('data.tokenizer', 'model.pad_index',
-            lambda tokenizer: tokenizer.specials.index(tokenizer.pad_token), apply_on='instantiate')
+        parser.link_arguments('data.tokenizer_trainer.num_tokens', 'model.n_vocab', apply_on='instantiate')
+        parser.link_arguments('data.tokenizer_trainer', 'model.pad_index',
+            lambda tokenizer_trainer: tokenizer_trainer.get_pad_index(), apply_on='instantiate')
 
 
 def main():
