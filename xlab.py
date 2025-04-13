@@ -37,7 +37,7 @@ class XLabTrainer(Trainer):
         datamodule.create_datasets_and_tokenizer(['train'], tokenizer_only=True)
 
     def compute_stats(self, model, datamodule: XLabDataModule, split: str = 'train', sample_size: int = 10_000):
-        """Compute dataset statistics"""
+        """Compute vocabulary and dataset statistics"""
         datamodule.prepare_data()
         tokenizer = datamodule.tokenizer
         dataset = datamodule.datasets[split].dataset
