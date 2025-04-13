@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ref: https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqazN3d29ySXRSbDRMc1diRXFlSmNOR0tYcTNVd3xBQ3Jtc0tsXzVpM2pEVS01SGFnQjRaTlBRdHZtbXpKNEN2ZER0UmR3T2xiLTRLSEFKVEk0QVNXOXRrWjdrZHRXNmZBaHVwWkJLZjFhemNlQXZJbm9tMTdUaFRHMC1TYTVtbmdjX0hINFdaY1FIbDRlOVJ5bXlqbw&q=https%3A%2F%2Fcolab.research.google.com%2Fdrive%2F1y0KnCFZvGVf_odSfcNAws6kcDD7HsI0L%3Fusp%3Dsharing&v=zduSFxRajkE
+
 from pathlib import Path
 from typing import Union, Iterable
 
@@ -35,11 +37,22 @@ class Tokenizer:
     def decode(self, indices: list[int]) -> str:
         return self.processor.decode(indices)
 
+    def get_token(self, index: int) -> str:
+        return self.processor.id_to_piece(index)
+
     def __getitem__(self, token: str) -> int:
         return self.processor.piece_to_id(token)
 
     def __len__(self) -> int:
         return self.processor.get_piece_size()
+
+    def is_learned(self, index):
+        return not self.processor.is_unknown(index) \
+            and not self.processor.is_control(index) \
+            and not self.processor.is_byte(index)
+
+    def is_char(self, index):
+        return len(self.get_token(index)) == 1 and self.is_learned(index)
 
     @staticmethod
     def load(path: Union[Path, str]) -> 'Tokenizer':
@@ -52,11 +65,29 @@ class Tokenizer:
 
 
 class TokenizerTrainer:
-    def __init__(
-            self,
-            train_args: dict = {
+    def __init__(self, train_args=None):
+        if train_args is None:
+            # https://github.com/google/sentencepiece/blob/master/doc/options.md
+            train_args = {
+                'model_type': 'bpe',
+                'character_coverage': 0.9995,
+                'input_sentence_size': 0,  # max number of sentences
+                'shuffle_input_sentence': True,
+                'num_threads': 4,
+                'max_sentencepiece_length': 16,
+                'max_sentence_length': 1073741824,
+                'split_by_unicode_script': True,
+                'split_by_number': True,
+                'split_by_whitespace': True,
+                'split_digits': True,
+                'treat_whitespace_as_suffix': False,
+                'allow_whitespace_only_pieces': True,
+                'required_chars': '',
+                'byte_fallback': True,
+                'normalization_rule_name': 'identity',
+                'add_dummy_prefix': True,
+                'remove_extra_whitespaces': False,
             }
-    ):
         self.train_args = train_args
 
     def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
@@ -70,6 +101,7 @@ class TokenizerTrainer:
             'input_format': 'text',
             'model_prefix': save_path.parent / save_path.stem,
             'vocab_size': num_tokens,
+            'hard_vocab_limit': True,
             'unk_id': Tokenizer.specials.index(Tokenizer.unk_token),
             'bos_id': Tokenizer.specials.index(Tokenizer.sos_token),
             'eos_id': Tokenizer.specials.index(Tokenizer.eos_token),

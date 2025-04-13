@@ -51,7 +51,7 @@ class XLabDataModule(L.LightningDataModule):
         self.column = column
         self.num_tokens = num_tokens
         self.tokenizer_path = tokenizer_path
-        self.tokenizer_trainer = TokenizerTrainer(**tokenizer_train_args)
+        self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
         self.num_proc = num_proc
         self.progress = progress

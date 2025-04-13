@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import unicodedata
+
 import torch
 import platformdirs
 from tqdm.auto import tqdm
@@ -43,3 +45,18 @@ def cached(function, name, fingerprint):
         result = function()
         torch.save(result, path)
     return result
+
+
+def is_ascii(char):
+    return ord(char) < 128
+
+
+def is_control(char):
+    return unicodedata.category(char)[0] == 'C'
+
+
+def escape(output: str) -> str:
+    return ''.join(
+        char if not is_control(char) else rf'\u{ord(char):04x}'
+        for char in output
+    )

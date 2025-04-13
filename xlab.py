@@ -39,14 +39,21 @@ class XLabTrainer(Trainer):
     def compute_stats(self, model, datamodule: XLabDataModule, split: str = 'train', sample_size: int = 10_000):
         """Compute dataset statistics"""
         datamodule.prepare_data()
+        tokenizer = datamodule.tokenizer
         dataset = datamodule.datasets[split].dataset
-        stats = compute_stats(dataset, sample_size=sample_size)
-        print(f'Split: {split}')
-        print(f'Size: {len(dataset):,} texts, {stats["size_est"]:,} tokens (est.)')
+        stats = compute_stats(tokenizer, dataset, sample_size=sample_size)
         print(
-            f'Text length: {stats["length_mean"]:,.1f}'
-            f' ({stats["length_median"]:,.1f})'
-            f' ± {stats["length_std"]:,.1f} tokens'
+            f'Vocabulary: {len(tokenizer)} total,'
+            f' {stats["vocabulary"]["num_learned"]} learned,'
+            f' {stats["vocabulary"]["num_chars"]} characters,'
+            f' {stats["vocabulary"]["num_unicode"]} unicode'
+        )
+        print(f'Split: {split}')
+        print(f'Size: {len(dataset):,} texts, {stats["dataset"]["size_est"]:,} tokens (est.)')
+        print(
+            f'Text length: {stats["dataset"]["length_mean"]:,.1f}'
+            f' ({stats["dataset"]["length_median"]:,.1f})'
+            f' ± {stats["dataset"]["length_std"]:,.1f} tokens'
         )
 
 

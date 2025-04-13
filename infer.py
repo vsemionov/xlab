@@ -24,6 +24,7 @@ from xlabml.tokenizer import Tokenizer
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModel
 from xlabml import inference
+from xlabml import utils
 
 
 @click.command()
@@ -87,13 +88,14 @@ def main(
                 output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
             )
 
-        norm_prompt = tokenizer.decode(inputs[len(prefix):].tolist())
+        rev_prompt = tokenizer.decode(inputs[len(prefix):].tolist())
         indices = indices.tolist()
         if len(indices) < limit:
             indices.append(eos_index)
         output = tokenizer.decode(indices)
-        sep = ' ' if norm_prompt else ''
-        print(f'{norm_prompt}{sep}{output}')
+        sep = ' ' if rev_prompt else ''
+        escaped = utils.escape(f'{rev_prompt}{sep}{output}')
+        print(escaped)
 
 
 if __name__ == '__main__':
