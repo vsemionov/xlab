@@ -49,11 +49,21 @@ class XLabTrainer(Trainer):
             f' {stats["vocabulary"]["num_unicode"]} unicode'
         )
         print(f'Split: {split}')
-        print(f'Size: {len(dataset):,} texts, {stats["dataset"]["size_est"]:,} tokens (est.)')
         print(
-            f'Text length: {stats["dataset"]["length_mean"]:,.1f}'
-            f' ({stats["dataset"]["length_median"]:,.1f})'
-            f' ± {stats["dataset"]["length_std"]:,.1f} tokens'
+            f'Size: {len(dataset):,} texts,'
+            f' {stats["dataset"]["text_size_est"]:,} characters (est.),'
+            f' {stats["dataset"]["token_size_est"]:,} tokens (est.)')
+        print(
+            f'Text length: {stats["dataset"]["text_length_mean"]:,.1f}'
+            f' ({stats["dataset"]["text_length_median"]:,.1f})'
+            f' ± {stats["dataset"]["text_length_std"]:,.1f} characters,'
+            f' {stats["dataset"]["token_length_mean"]:,.1f}'
+            f' ({stats["dataset"]["token_length_median"]:,.1f})'
+            f' ± {stats["dataset"]["token_length_std"]:,.1f} tokens'
+        )
+        print(
+            f'Mean token length in split: '
+            f'{stats["dataset"]["text_size_est"] / stats["dataset"]["token_size_est"]:,.2f} characters'
         )
 
 

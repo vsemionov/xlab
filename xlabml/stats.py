@@ -32,14 +32,21 @@ def vocabulary_stats(tokenizer: Tokenizer):
 
 def dataset_stats(dataset: TokenDataset, sample_size):
     np.random.seed(42)
-    sample_indices = np.random.permutation(min(sample_size, len(dataset)))
-    sample = dataset[sample_indices]
-    lengths = np.array([len(indices) for indices in sample])
+    sample_size = min(sample_size, len(dataset))
+    sample_indices = np.random.permutation(sample_size)
+    text_sample = dataset.parent[sample_indices]
+    token_sample = dataset[sample_indices]
+    text_lengths = np.array([len(text) for text in text_sample])
+    token_lengths = np.array([len(indices) for indices in token_sample])
     return {
-        'size_est': round(np.sum(lengths) * len(dataset) / len(sample)),
-        'length_mean': np.mean(lengths),
-        'length_median': np.median(lengths),
-        'length_std': np.std(lengths),
+        'text_size_est': round(np.sum(text_lengths) * len(dataset) / sample_size),
+        'token_size_est': round(np.sum(token_lengths) * len(dataset) / sample_size),
+        'text_length_mean': np.mean(text_lengths),
+        'text_length_median': np.median(text_lengths),
+        'text_length_std': np.std(text_lengths),
+        'token_length_mean': np.mean(token_lengths),
+        'token_length_median': np.median(token_lengths),
+        'token_length_std': np.std(token_lengths),
     }
 
 
