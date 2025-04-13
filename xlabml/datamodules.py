@@ -99,7 +99,7 @@ class XLabDataModule(L.LightningDataModule):
                     f'Model dimensions are linked to the configured size, which is incorrect.'
                 )
             if vocab_size > num_tokens:
-                raise RuntimeError(
+                raise ValueError(
                     f'Tokenizer vocabulary has size {vocab_size}, which is more than the configured {num_tokens}. '
                     f'Model dimensions are linked to the configured size, which is incorrect.'
                 )

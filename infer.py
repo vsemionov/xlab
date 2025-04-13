@@ -64,6 +64,9 @@ def main(
         model = XLabModel.load_from_checkpoint(checkpoint_path, map_location=device)
     model.eval().requires_grad_(False)
 
+    if len(tokenizer) != model.hparams['n_vocab']:
+        raise ValueError(f'Tokenizer vocabulary size {len(tokenizer)} differs from model {model.hparams["n_vocab"]}')
+
     sos_index, eos_index = [tokenizer[token] for token in [tokenizer.sos_token, tokenizer.eos_token]]
     prefix = [] if continued else [sos_index]
     inputs = torch.tensor(prefix + tokenizer.encode(prompt), device=model.device)
