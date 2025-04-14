@@ -165,6 +165,7 @@ class TokenizerTrainer:
         }
         spm.SentencePieceTrainer.train(sentence_iterator=chunks, model_writer=model, **kwargs)
         save_path.write_bytes(model.getvalue())
+        print(f'Saved tokenizer to: {save_path}')
         return Tokenizer.load(model.getvalue())
 
     @staticmethod
