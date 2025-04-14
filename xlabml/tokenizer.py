@@ -90,12 +90,30 @@ class TokenizerTrainer:
         }
         self.train_args = train_args
 
+    def chunk_line(self, line):
+        # sentencepiece chokes on lines longer than 65536, so break them at spaces
+        if len(line) <= 65536:
+            yield line
+            return
+        chunks = line.split(' ')
+        n = len(chunks)
+        if n == 1:
+            raise ValueError('Line too long and no more splits possible')
+        n = n // 2
+        left = ' '.join(chunks[:n])
+        right = ' '.join(chunks[n:])
+        for chunk in self.chunk_line(left):
+            yield chunk
+        for chunk in self.chunk_line(right):
+            yield chunk
+
     def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
         save_path = Path(save_path)
         assert save_path.name.endswith('.model')
         assert not save_path.exists()
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        sentences = (line for text in texts for line in text.split('\n') if line)
+        lines = (line for text in texts for line in text.split('\n') if line)
+        chunks = (chunk for line in lines for chunk in self.chunk_line(line) if chunk)
         kwargs = {
             **self.train_args,
             'input_format': 'text',
@@ -111,7 +129,7 @@ class TokenizerTrainer:
             'eos_piece': Tokenizer.eos_token,
             'pad_piece': Tokenizer.pad_token,
         }
-        spm.SentencePieceTrainer.train(sentence_iterator=sentences, **kwargs)
+        spm.SentencePieceTrainer.train(sentence_iterator=chunks, **kwargs)
         return Tokenizer.load(save_path)
 
     @staticmethod
