@@ -19,7 +19,6 @@ dependencies = [
     "lightning",
     "numpy",
     "platformdirs",
-    "rich",
     "sentencepiece",
     "torch",
     "torchdata",
