@@ -14,8 +14,10 @@
 
 # ref: https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqazN3d29ySXRSbDRMc1diRXFlSmNOR0tYcTNVd3xBQ3Jtc0tsXzVpM2pEVS01SGFnQjRaTlBRdHZtbXpKNEN2ZER0UmR3T2xiLTRLSEFKVEk0QVNXOXRrWjdrZHRXNmZBaHVwWkJLZjFhemNlQXZJbm9tMTdUaFRHMC1TYTVtbmdjX0hINFdaY1FIbDRlOVJ5bXlqbw&q=https%3A%2F%2Fcolab.research.google.com%2Fdrive%2F1y0KnCFZvGVf_odSfcNAws6kcDD7HsI0L%3Fusp%3Dsharing&v=zduSFxRajkE
 
+import re
 from io import BytesIO
 from pathlib import Path
+from functools import partial
 from typing import Union, Iterable
 
 import sentencepiece as spm
@@ -29,17 +31,41 @@ class Tokenizer:
 
     def __init__(self, processor: spm.SentencePieceProcessor):
         self.processor = processor
+
+        self._metaspace = metaspace = '▁'  # U+2581
+        self._replacement = replacement = '<U-2581>'  # no regex special chars (use - instead of +)
+        self._escape_replacement = partial(re.compile(rf'(#*){replacement}').sub, rf'\1\1#{replacement}')  # 2k+1
+        self._replace_metaspace = partial(re.compile(rf'(#*){metaspace}').sub, rf'\1\1{replacement}')  # 2k
+        self._restore_metaspace = partial(re.compile(rf'(^|[^#])(#*)\2{replacement}').sub, rf'\1\2{metaspace}')  # 2k
+        self._unescape_replacement = partial(re.compile(rf'(^|[^#])(#*)\2#{replacement}').sub, rf'\1\2{replacement}')
+
         self._test()
 
     def _test(self):
+        # make sure special token indices match expected order
         for index, token in enumerate(self.specials):
             assert self[token] == index
 
+    def _escape(self, text):
+        # regexes are slow, but contains checks are fast, so run replacements conditionally
+        if self._replacement in text:
+            text = self._escape_replacement(text)
+        if self._metaspace in text:
+            text = self._replace_metaspace(text)
+        return text
+
+    def _unescape(self, text):
+        if self._replacement in text:
+            text = self._restore_metaspace(text)
+            if self._replacement in text:
+                text = self._unescape_replacement(text)
+        return text
+
     def encode(self, text: str) -> list[int]:
-        return self.processor.encode(text)
+        return self.processor.encode(self._escape(text))
 
     def decode(self, indices: list[int]) -> str:
-        return self.processor.decode(indices)
+        return self._unescape(self.processor.decode(indices))
 
     def get_token(self, index: int) -> str:
         return self.processor.id_to_piece(index)
@@ -142,3 +168,20 @@ class TokenizerTrainer:
     @staticmethod
     def get_pad_index() -> int:
         return Tokenizer.specials.index(Tokenizer.pad_token)
+
+
+if __name__ == '__main__':
+    test_path = Path('tokenizers/test.tok')
+    tokenizer = TokenizerTrainer().train(['April is a month'], 299, test_path)
+    test_path.unlink()
+
+    test_text = 'Hello world!'
+    assert tokenizer.decode(tokenizer.encode(test_text)) == test_text
+
+    test_text = '▁<U-2581>'
+    assert tokenizer.decode(tokenizer.encode(test_text)) == test_text
+
+    test_text = '#<U-2581>#▁'
+    assert tokenizer.decode(tokenizer.encode(test_text)) == test_text
+
+    print('All OK')
