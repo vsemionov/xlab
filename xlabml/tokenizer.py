@@ -19,6 +19,7 @@ from io import BytesIO
 from pathlib import Path
 from functools import partial
 from typing import Union, Iterable
+import warnings
 
 import sentencepiece as spm
 
@@ -133,7 +134,8 @@ class TokenizerTrainer:
         chunks = line.split(' ')
         n = len(chunks)
         if n == 1:
-            raise ValueError('Line too long and no more splits possible')
+            warnings.warn('Line too long and no more splits possible')
+            return
         n = n // 2
         left = ' '.join(chunks[:n])
         right = ' '.join(chunks[n:])
