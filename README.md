@@ -15,7 +15,7 @@ It features:
 
 
 ## Model
-A decoder-only transformer architecture ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762))
+A transformer decoder architecture ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762))
 with the following modifications:
  - Normalization is performed before the transformer sublayers.
    An extra normalization layer is added after the last feedforward sublayer.
