@@ -36,8 +36,8 @@ The following criteria were used to select a tokenization algorithm:
 The selected algorithm is BPE (byte pair encoding) from [SentencePiece](https://github.com/google/sentencepiece).
 This implementation operates on characters, but is able to encode out-of-vocabulary symbols with bytes.
 SentencePiece is mostly reversible, but loses information by replacing spaces with the meta symbol "▁" (U+2581).
-To ensure perfect reversibility, we replace this symbol with a rare sequence,
-and unambiguously escape occurrences of the replacement.
+To ensure perfect reversibility, this symbol is replaced with a rare sequence,
+and occurrences of the replacement are unambiguously escaped.
 The vocabulary size is 32K tokens, as a reasonable tradeoff between context compression and head size.
 
 
