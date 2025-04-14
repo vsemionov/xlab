@@ -66,28 +66,28 @@ class Tokenizer:
 
 class TokenizerTrainer:
     def __init__(self, train_args=None):
-        if train_args is None:
-            # https://github.com/google/sentencepiece/blob/master/doc/options.md
-            train_args = {
-                'model_type': 'bpe',
-                'character_coverage': 0.9995,
-                'input_sentence_size': 0,  # max number of sentences
-                'shuffle_input_sentence': True,
-                'num_threads': 4,
-                'max_sentencepiece_length': 16,
-                'max_sentence_length': 1073741824,
-                'split_by_unicode_script': True,
-                'split_by_number': True,
-                'split_by_whitespace': True,
-                'split_digits': True,
-                'treat_whitespace_as_suffix': False,
-                'allow_whitespace_only_pieces': True,
-                'required_chars': '',
-                'byte_fallback': True,
-                'normalization_rule_name': 'identity',
-                'add_dummy_prefix': True,
-                'remove_extra_whitespaces': False,
-            }
+        # https://github.com/google/sentencepiece/blob/master/doc/options.md
+        train_args = {
+            'model_type': 'bpe',
+            'character_coverage': 0.9995,
+            'input_sentence_size': 0,  # max number of sentences
+            'shuffle_input_sentence': True,
+            'num_threads': 4,
+            'max_sentencepiece_length': 16,
+            'max_sentence_length': 1073741824,
+            'split_by_unicode_script': True,
+            'split_by_number': True,
+            'split_by_whitespace': True,
+            'split_digits': True,
+            'treat_whitespace_as_suffix': False,
+            'allow_whitespace_only_pieces': True,
+            'required_chars': '',
+            'byte_fallback': True,
+            'normalization_rule_name': 'identity',
+            'add_dummy_prefix': True,
+            'remove_extra_whitespaces': False,
+            **(train_args or {})
+        }
         self.train_args = train_args
 
     def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
