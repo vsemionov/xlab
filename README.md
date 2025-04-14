@@ -29,11 +29,14 @@ Positional encodings are used, because learned positional embeddings degrade per
 
 
 ## Tokenizer
-The implementation from [torchtext](https://github.com/pytorch/text),
-which lowercases the input text, strips punctuation, and yields tokens between whitespace boundaries.
-The vocabulary is built from the 32K tokens with the highest frequencies across the training set.
-Tokens matching special values (e.g. *&lt;unk&gt;* and *&lt;pad&gt;*) are escaped
-in order to avoid misinterpretation and improve reversibility.
+The following criteria were used to select a tokenization algorithm:
+ - Able to encode any Unicode string without resorting to "unknown" tokens
+ - Perfectly reversible (no information loss during preprocessing)
+
+The selected algorithm is BPE (byte pair encoding) from [SentencePiece](https://github.com/google/sentencepiece).
+This implementation operates on characters, but is able to encode out-of-vocabulary symbols with bytes.
+SentencePiece is mostly reversible, but loses information by replacing spaces with the meta symbol "▁" (U+2581).
+To ensure perfect reversibility, we replace this symbol with a rare sequence, and escape occurrences of the replacement.
 
 
 ## Dataset
