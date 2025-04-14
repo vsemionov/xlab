@@ -28,6 +28,9 @@ class Tokenizer:
 
     def __init__(self, processor: spm.SentencePieceProcessor):
         self.processor = processor
+        self._test()
+
+    def _test(self):
         for index, token in enumerate(self.specials):
             assert self[token] == index
 
