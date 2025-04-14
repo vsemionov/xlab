@@ -171,17 +171,45 @@ class TokenizerTrainer:
 
 
 if __name__ == '__main__':
-    test_path = Path('tokenizers/test.tok')
-    tokenizer = TokenizerTrainer().train(['April is a month'], 299, test_path)
-    test_path.unlink()
+    import time
 
-    test_text = 'Hello world!'
-    assert tokenizer.decode(tokenizer.encode(test_text)) == test_text
+    path = Path('tokenizers/test.tok')
 
-    test_text = '▁<U-2581>'
-    assert tokenizer.decode(tokenizer.encode(test_text)) == test_text
+    tokenizer = TokenizerTrainer().train(['April is a month'], 299, path)
+    path.unlink()
 
-    test_text = '#<U-2581>#▁'
-    assert tokenizer.decode(tokenizer.encode(test_text)) == test_text
+    text = 'Hello world!'
+    assert tokenizer.decode(tokenizer.encode(text)) == text
+
+    text = '▁<U-2581>'
+    assert tokenizer.decode(tokenizer.encode(text)) == text
+
+    text = '#<U-2581>#▁'
+    assert tokenizer.decode(tokenizer.encode(text)) == text
+
+    sentence = 'The quick brown fox jumps over the lazy dog.'
+    tokenizer = TokenizerTrainer().train(['The quick brown fox jumps over the lazy dog.'], 358, path)
+    path.unlink()
+    reps = 10_000
+    text = ' '.join([sentence] * reps)
+    t0 = time.time()
+    indices = tokenizer.encode(text)
+    t1 = time.time()
+    tokenizer.decode(indices)
+    t2 = time.time()
+    for _ in range(reps):
+        indices = tokenizer.encode(sentence)
+    t3 = time.time()
+    for _ in range(reps):
+        tokenizer.decode(indices)
+    t4 = time.time()
+    print(
+        f'Encode speed: {len(text) / (t1 - t0) / 1024**2:,.1f} MB/s for long text,'
+        f' {len(sentence) * reps / (t3 - t2) / 1024**2:,.1f} MB/s for short text'
+    )
+    print(
+        f'Decode speed: {len(text) / (t2 - t1) / 1024**2:,.1f} MB/s for long text,'
+        f' {len(sentence) * reps / (t4 - t3) / 1024**2:,.1f} MB/s for short text'
+    )
 
     print('All OK')
