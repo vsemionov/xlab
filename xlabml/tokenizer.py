@@ -126,7 +126,7 @@ class TokenizerTrainer:
         }
         self.train_args = train_args
 
-    def chunk_line(self, line):
+    def _chunk_line(self, line):
         # sentencepiece chokes on lines longer than 65536, so break them at spaces
         if len(line) <= 65536:
             yield line
@@ -139,9 +139,9 @@ class TokenizerTrainer:
         n = n // 2
         left = ' '.join(chunks[:n])
         right = ' '.join(chunks[n:])
-        for chunk in self.chunk_line(left):
+        for chunk in self._chunk_line(left):
             yield chunk
-        for chunk in self.chunk_line(right):
+        for chunk in self._chunk_line(right):
             yield chunk
 
     def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
@@ -149,7 +149,7 @@ class TokenizerTrainer:
         assert not save_path.exists()
         save_path.parent.mkdir(parents=True, exist_ok=True)
         lines = (Tokenizer._escape(line) for text in texts for line in text.split('\n') if line)
-        chunks = (chunk for line in lines for chunk in self.chunk_line(line) if chunk)
+        chunks = (chunk for line in lines for chunk in self._chunk_line(line) if chunk)
         model = BytesIO()
         kwargs = {
             **self.train_args,
