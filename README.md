@@ -136,7 +136,8 @@ To see the full list, run `./xlab.py --help`.
 
 
 ## Model
-A decoder-only transformer architecture ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762)) with the following modifications:
+A decoder-only transformer architecture ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762))
+with the following modifications:
  - Normalization is performed before the transformer sublayers.
    An extra normalization layer is added after the last feedforward sublayer.
    This improved both performance and training stability.
