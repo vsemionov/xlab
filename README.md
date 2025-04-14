@@ -10,7 +10,7 @@ Transformer Lab - experimental implementations and training of LLMs at scale, us
 It features:
  - Simple, efficient implementations
  - Seamless parallel and reproducible training on multiple GPUs
- - Configurable architecture modifications and training procedure
+ - Easily configurable architecture modifications and training procedure
  - Inference using multiple generation strategies
 
 
