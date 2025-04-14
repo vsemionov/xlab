@@ -14,6 +14,7 @@
 
 # ref: https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqazN3d29ySXRSbDRMc1diRXFlSmNOR0tYcTNVd3xBQ3Jtc0tsXzVpM2pEVS01SGFnQjRaTlBRdHZtbXpKNEN2ZER0UmR3T2xiLTRLSEFKVEk0QVNXOXRrWjdrZHRXNmZBaHVwWkJLZjFhemNlQXZJbm9tMTdUaFRHMC1TYTVtbmdjX0hINFdaY1FIbDRlOVJ5bXlqbw&q=https%3A%2F%2Fcolab.research.google.com%2Fdrive%2F1y0KnCFZvGVf_odSfcNAws6kcDD7HsI0L%3Fusp%3Dsharing&v=zduSFxRajkE
 
+from io import BytesIO
 from pathlib import Path
 from typing import Union, Iterable
 
@@ -58,12 +59,15 @@ class Tokenizer:
         return len(self.get_token(index)) == 1 and self.is_learned(index)
 
     @staticmethod
-    def load(path: Union[Path, str]) -> 'Tokenizer':
+    def load(path_or_data: Union[Path, str, bytes]) -> 'Tokenizer':
         processor = spm.SentencePieceProcessor()
-        try:
-            processor.load(str(path))
-        except OSError as e:
-            raise FileNotFoundError from e
+        if isinstance(path_or_data, bytes):
+            processor.load(model_proto=path_or_data)
+        else:
+            try:
+                processor.load(str(path_or_data))
+            except OSError as e:
+                raise FileNotFoundError from e
         return Tokenizer(processor)
 
 
@@ -112,15 +116,14 @@ class TokenizerTrainer:
 
     def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
         save_path = Path(save_path)
-        assert save_path.name.endswith('.model')
         assert not save_path.exists()
         save_path.parent.mkdir(parents=True, exist_ok=True)
         lines = (line for text in texts for line in text.split('\n') if line)
         chunks = (chunk for line in lines for chunk in self.chunk_line(line) if chunk)
+        model = BytesIO()
         kwargs = {
             **self.train_args,
             'input_format': 'text',
-            'model_prefix': save_path.parent / save_path.stem,
             'vocab_size': num_tokens,
             'hard_vocab_limit': True,
             'unk_id': Tokenizer.specials.index(Tokenizer.unk_token),
@@ -132,8 +135,9 @@ class TokenizerTrainer:
             'eos_piece': Tokenizer.eos_token,
             'pad_piece': Tokenizer.pad_token,
         }
-        spm.SentencePieceTrainer.train(sentence_iterator=chunks, **kwargs)
-        return Tokenizer.load(save_path)
+        spm.SentencePieceTrainer.train(sentence_iterator=chunks, model_writer=model, **kwargs)
+        save_path.write_bytes(model.getvalue())
+        return Tokenizer.load(model.getvalue())
 
     @staticmethod
     def get_pad_index() -> int:

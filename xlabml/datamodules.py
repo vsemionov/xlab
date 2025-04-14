@@ -35,7 +35,7 @@ class XLabDataModule(L.LightningDataModule):
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
             column: str = 'text',
             num_tokens: int = 10_000,
-            tokenizer_path: Path = Path('tokenizers/default.model'),
+            tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
             num_proc: int = 4,
             progress: str = 'tqdm',
