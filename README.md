@@ -14,6 +14,52 @@ It features:
  - Inference using various generation strategies
 
 
+## Model
+A decoder-only transformer architecture ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762))
+with the following modifications:
+ - Normalization is performed before the transformer sublayers.
+   An extra normalization layer is added after the last feedforward sublayer.
+   This improved both performance and training stability.
+ - The GELU activation function is used (performance improvement)
+ - Dropout is only applied in the attention and feedforward sublayers
+   (to the product of the queries and keys, and to the hidden activations, respectively)
+   (performance improvement)
+
+Positional encodings are used, because learned positional embeddings degrade performance in the current setup.
+
+
+## Tokenizer
+The implementation from [torchtext](https://github.com/pytorch/text),
+which lowercases the input text, strips punctuation, and yields tokens between whitespace boundaries.
+The vocabulary is built from the 32K tokens with the highest frequencies across the training set.
+Tokens matching special values (e.g. *&lt;unk&gt;* and *&lt;pad&gt;*) are escaped
+in order to avoid misinterpretation and improve reversibility.
+
+
+## Dataset
+[wikimedia/wikipedia, 20231101.en](https://huggingface.co/datasets/wikimedia/wikipedia), split into:
+ - train: 90%
+ - val: 5%
+ - test: 2.5%
+ - predict: 2.5%
+
+Articles (texts) are chunked into sequences with 50% overlap.
+
+
+## Training
+The model was trained on sequences of maximum length 256.
+To speed up training and reduce memory usage, 16-bit mixed precision is used.
+To mitigate stability issues, the bfloat16 data type is used, along with gradient clipping by norm 1.0.
+The AdamW optimizer is used, with learning rate 3e-4 and weight decay 0.1.
+The training ran on a single A100 GPU, with batch size 256, and was stopped after 4 epochs (440K steps after 2 days).
+
+
+## Results
+| Version | Checkpoint | Loss (test) | Accuracy (test) |
+|---------|------------|-------------|-----------------|
+| 0.1     | last       | 3.18        | 40.0%           |
+
+
 ## Getting started
 ### Installation
 XLab can be installed as a Python package, or by cloning this repository.
@@ -133,52 +179,6 @@ Additional YAML configuration can be specified with the `-c PATH` option.
 See `conf/xlab.yaml` for the configuration used to train the current release model.
 Additional options (or overrides of the above configuration) can be specified on the command line.
 To see the full list, run `./xlab.py --help`.
-
-
-## Model
-A decoder-only transformer architecture ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762))
-with the following modifications:
- - Normalization is performed before the transformer sublayers.
-   An extra normalization layer is added after the last feedforward sublayer.
-   This improved both performance and training stability.
- - The GELU activation function is used (performance improvement)
- - Dropout is only applied in the attention and feedforward sublayers
-   (to the product of the queries and keys, and to the hidden activations, respectively)
-   (performance improvement)
-
-Positional encodings are used, because learned positional embeddings degrade performance in the current setup.
-
-
-## Tokenizer
-The implementation from [torchtext](https://github.com/pytorch/text),
-which lowercases the input text, strips punctuation, and yields tokens between whitespace boundaries.
-The vocabulary is built from the 32K tokens with the highest frequencies across the training set.
-Tokens matching special values (e.g. *&lt;unk&gt;* and *&lt;pad&gt;*) are escaped
-in order to avoid misinterpretation and improve reversibility.
-
-
-## Dataset
-[wikimedia/wikipedia, 20231101.en](https://huggingface.co/datasets/wikimedia/wikipedia), split into:
- - train: 90%
- - val: 5%
- - test: 2.5%
- - predict: 2.5%
-
-Articles (texts) are chunked into sequences with 50% overlap.
-
-
-## Training
-The model was trained on sequences of maximum length 256.
-To speed up training and reduce memory usage, 16-bit mixed precision is used.
-To mitigate stability issues, the bfloat16 data type is used, along with gradient clipping by norm 1.0.
-The AdamW optimizer is used, with learning rate 3e-4 and weight decay 0.1.
-The training ran on a single A100 GPU, with batch size 256, and was stopped after 4 epochs (440K steps after 2 days).
-
-
-## Results
-| Version | Checkpoint | Loss (test) | Accuracy (test) |
-|---------|------------|-------------|-----------------|
-| 0.1     | last       | 3.18        | 40.0%           |
 
 
 ## Generations
