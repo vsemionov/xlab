@@ -25,6 +25,20 @@ dependencies = [
     "tqdm",
 ]
 
+[project.optional-dependencies]
+data = [
+    "jupyter",
+    "matplotlib",
+    "omegaconf",
+    "pandas",
+    "rich",
+    "seaborn",
+    "tensorboard",
+]
+dev = [
+    "flit",
+]
+
 [project.urls]
 Home = "https://github.com/vsemionov/xlab"
 
