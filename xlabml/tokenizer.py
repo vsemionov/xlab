@@ -29,16 +29,16 @@ class Tokenizer:
     pad_token = '<pad>'
     specials = [unk_token, sos_token, eos_token, pad_token]
 
+    _metaspace = '▁'  # U+2581
+    _replacement = '<U-2581>'  # no regex special chars (use - instead of +)
+
+    _escape_replacement = partial(re.compile(rf'(#*){_replacement}').sub, rf'\1\1#{_replacement}')  # 2k+1
+    _replace_metaspace = partial(re.compile(rf'(#*){_metaspace}').sub, rf'\1\1{_replacement}')  # 2k
+    _restore_metaspace = partial(re.compile(rf'(^|[^#])(#*)\2{_replacement}').sub, rf'\1\2{_metaspace}')  # 2k
+    _unescape_replacement = partial(re.compile(rf'(^|[^#])(#*)\2#{_replacement}').sub, rf'\1\2{_replacement}')  # 2k+1
+
     def __init__(self, processor: spm.SentencePieceProcessor):
         self.processor = processor
-
-        self._metaspace = metaspace = '▁'  # U+2581
-        self._replacement = replacement = '<U-2581>'  # no regex special chars (use - instead of +)
-        self._escape_replacement = partial(re.compile(rf'(#*){replacement}').sub, rf'\1\1#{replacement}')  # 2k+1
-        self._replace_metaspace = partial(re.compile(rf'(#*){metaspace}').sub, rf'\1\1{replacement}')  # 2k
-        self._restore_metaspace = partial(re.compile(rf'(^|[^#])(#*)\2{replacement}').sub, rf'\1\2{metaspace}')  # 2k
-        self._unescape_replacement = partial(re.compile(rf'(^|[^#])(#*)\2#{replacement}').sub, rf'\1\2{replacement}')
-
         self._test()
 
     def _test(self):
@@ -46,19 +46,21 @@ class Tokenizer:
         for index, token in enumerate(self.specials):
             assert self[token] == index
 
-    def _escape(self, text):
+    @classmethod
+    def _escape(cls, text):
         # regexes are slow, but contains checks are fast, so run replacements conditionally
-        if self._replacement in text:
-            text = self._escape_replacement(text)
-        if self._metaspace in text:
-            text = self._replace_metaspace(text)
+        if cls._replacement in text:
+            text = cls._escape_replacement(text)
+        if cls._metaspace in text:
+            text = cls._replace_metaspace(text)
         return text
 
-    def _unescape(self, text):
-        if self._replacement in text:
-            text = self._restore_metaspace(text)
-            if self._replacement in text:
-                text = self._unescape_replacement(text)
+    @classmethod
+    def _unescape(cls, text):
+        if cls._replacement in text:
+            text = cls._restore_metaspace(text)
+            if cls._replacement in text:
+                text = cls._unescape_replacement(text)
         return text
 
     def encode(self, text: str) -> list[int]:
@@ -144,7 +146,7 @@ class TokenizerTrainer:
         save_path = Path(save_path)
         assert not save_path.exists()
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        lines = (line for text in texts for line in text.split('\n') if line)
+        lines = (Tokenizer._escape(line) for text in texts for line in text.split('\n') if line)
         chunks = (chunk for line in lines for chunk in self.chunk_line(line) if chunk)
         model = BytesIO()
         kwargs = {
