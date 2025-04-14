@@ -1,8 +1,9 @@
 # XLab
 
-[![PyPI Project](https://img.shields.io/badge/pypi-xlabml-blue?logo=pypi)](https://pypi.org/project/xlabml/)
-[![PyTorch Powered](https://img.shields.io/badge/pytorch-powered-blue?logo=pytorch)](https://pytorch.org/)
-[![Lightning Powered](https://img.shields.io/badge/lightning-powered-blue?logo=lightning)](https://lightning.ai/docs/pytorch/stable/)
+[![PyPI Project](https://img.shields.io/badge/PyPI-xlabml-green?logo=pypi)](https://pypi.org/project/xlabml/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green)](LICENSE)
+[![PyTorch Powered](https://img.shields.io/badge/PyTorch-Powered-blue?logo=pytorch)](https://pytorch.org/)
+[![Lightning Powered](https://img.shields.io/badge/Lightning-Powered-blue?logo=lightning)](https://lightning.ai/docs/pytorch/stable/)
 
 Transformer Lab - experimental implementations and training of transformer models at scale, using modern techniques.
 
