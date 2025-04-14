@@ -5,7 +5,7 @@
 [![PyTorch Powered](https://img.shields.io/badge/PyTorch-Powered-blue?logo=pytorch)](https://pytorch.org/)
 [![Lightning Powered](https://img.shields.io/badge/Lightning-Powered-blue?logo=lightning)](https://lightning.ai/docs/pytorch/stable/)
 
-Transformer Lab - experimental implementations and training of transformer models at scale, using modern techniques.
+Transformer Lab - experimental implementations and training of LLMs at scale, using modern techniques.
 
 It features:
  - Simple, efficient implementations
