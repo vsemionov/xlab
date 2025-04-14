@@ -77,7 +77,8 @@ pip install xlabml
 Note that this will also install [Lightning](https://lightning.ai/docs/pytorch/stable/) and its dependencies.
 Given enough interest, future package versions may come without Lightning, to minimize the number of dependencies.
 
-To install Xlab from this repository, clone it, create a virtual environment, and run:
+To install Xlab from this repository, clone it and checkout a release tag (because the main branch may be unstable).
+Next, create a virtual environment, and run:
 ```shell
 pip install -r requirements.txt
 ```
