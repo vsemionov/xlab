@@ -24,7 +24,6 @@ from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
 from .datasets import TextDataset, TokenDataset, ChunkDataset, parallelize
-from .utils import progress_bar
 
 
 class XLabDataModule(L.LightningDataModule):
@@ -68,9 +67,7 @@ class XLabDataModule(L.LightningDataModule):
         try:
             tokenizer = Tokenizer.load(self.tokenizer_path)
         except FileNotFoundError:
-            print('Training tokenizer')
             texts = parallelize(dataset, n_jobs=self.num_proc)
-            texts = progress_bar(texts, kind=self.progress, total=len(dataset), desc='Loading data')
             tokenizer = self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
         return tokenizer
 
