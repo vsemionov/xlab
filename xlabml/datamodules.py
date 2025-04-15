@@ -38,6 +38,7 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
             bulk_options: Optional[dict[dict]] = None,
+            dynamic_encode: bool = False,
             progress: str = 'tqdm',
             seq_len: int = 128,
             step_size: Union[float, int] = 0.5,
@@ -54,6 +55,7 @@ class XLabDataModule(L.LightningDataModule):
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
         self.bulk_options = self._get_bulk_options(bulk_options)
+        self.dynamic_encode = dynamic_encode
         self.progress = progress
         self.seq_len = seq_len
         self.step_size = step_size
@@ -136,6 +138,7 @@ class XLabDataModule(L.LightningDataModule):
             split: TokenDataset(
                 dataset=text_dataset,
                 tokenizer=self.tokenizer,
+                dynamic=self.dynamic_encode,
                 bulk_options=self.bulk_options['encode'],
             )
             for split, text_dataset in text_datasets.items()

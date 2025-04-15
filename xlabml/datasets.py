@@ -38,19 +38,21 @@ class TextDataset(data.Dataset):
         self.column = column
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
         splits = self._split(dataset, splits, bulk_options, quiet)
-        self.dataset = splits[split]
+        self.parent = splits[split]
+        self.dataset = self.parent.select_columns([self.column])
 
     @staticmethod
     def _split(dataset, splits, bulk_options, quiet):
         if isinstance(dataset, dict):
             dataset = datasets.concatenate_datasets(list(dataset.values()))
-        kwargs = bulk_options or {}
         total = len(dataset)
         results = {}
         for name, size in splits.items():
             if size > 0:
                 size = int(size * total) if isinstance(size, float) else size
-                split, dataset = dataset.train_test_split(train_size=size, shuffle=True, seed=42, **kwargs).values()
+                split, dataset = dataset.train_test_split(
+                    train_size=size, shuffle=True, seed=42, **(bulk_options or {})
+                ).values()
             else:
                 split, dataset = dataset, []
             results[name] = split
@@ -72,21 +74,29 @@ class TokenDataset(data.Dataset):
             self,
             dataset: TextDataset,
             tokenizer: Tokenizer,
+            dynamic: bool = False,
             bulk_options: Optional[dict] = None,
     ):
         super().__init__()
         self.column = 'indices'
         self.parent = dataset
         self.tokenizer = tokenizer
-        dataset = self._encode(self.parent, tokenizer, bulk_options)
-        self.dataset = dataset.with_format('numpy', columns=[self.column], output_all_columns=True)
+        self.dataset = self._encode(self.parent, tokenizer, dynamic, bulk_options)
 
-    def _encode(self, dataset, tokenizer, bulk_options):
+    def _encode(self, dataset, tokenizer, dynamic, bulk_options):
         def encode(batch):
-            batch[self.column] = tokenizer.encode(batch[dataset.column])
-            return batch
-        kwargs = bulk_options or {}
-        dataset = dataset.dataset.map(encode, batched=True, remove_columns=[dataset.column], desc='Encoding', **kwargs)
+            return {self.column: tokenizer.encode(batch[dataset.column])}
+        def transform(batch):
+            return {self.column: [np.array(indices) for indices in tokenizer.encode(batch[dataset.column])]}
+
+        if dynamic:
+            dataset = dataset.with_transform(transform)
+        else:
+            dataset = dataset.dataset.map(
+                encode, batched=True, remove_columns=dataset.column_names, desc='Encoding', **(bulk_options or {})
+            )
+            dataset = dataset.with_format('numpy')
+
         return dataset
 
     def __len__(self):
