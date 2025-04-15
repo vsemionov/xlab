@@ -3,8 +3,9 @@ trainer:
   strategy: auto
   devices: auto
   num_nodes: 1
-  precision: bf16-mixed
+  max_epochs: 20
   val_check_interval: 0.2
+  precision: bf16-mixed
   gradient_clip_val: 1.0
   gradient_clip_algorithm: norm
 
@@ -47,3 +48,9 @@ data:
   pin_memory: true
   num_workers: 4
   persistent_workers: true
+
+optimizer:
+  class_path: AdamW
+  init_args:
+    lr: 3e-4
+    weight_decay: 0.1
