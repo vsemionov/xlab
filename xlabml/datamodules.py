@@ -20,6 +20,7 @@ import torch
 import torch.utils.data as data
 import lightning as L
 from torchdata.stateful_dataloader import StatefulDataLoader
+from boltons.dictutils import FrozenDict
 from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
@@ -32,7 +33,7 @@ class XLabDataModule(L.LightningDataModule):
     def __init__(
             self,
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
-            splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
+            splits: dict[str, float] = FrozenDict({'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05}),  # noqa
             column: str = 'text',
             num_tokens: int = 10_000,
             tokenizer_path: Path = Path('tokenizers/default.tok'),

@@ -90,9 +90,9 @@ class ChunkDataset(data.Dataset):
         assert 0 < self.step_size <= self.seq_len
         self.num_proc = num_proc
         self.progress = progress
-        self.index = cached(lambda: self._chunk(dataset), 'index', _fingerprint(dataset.dataset))
+        self.index = cached(lambda: self._index(dataset), 'index', _fingerprint(dataset.dataset))
 
-    def _chunk(self, dataset):
+    def _index(self, dataset):
         index = []
         encodings = parallelize(dataset, n_jobs=self.num_proc, threaded=True)
         encodings = progress_bar(encodings, kind=self.progress, total=len(dataset), desc='Indexing')
@@ -151,11 +151,10 @@ def _split(dataset, splits, quiet):
 
 
 def _fingerprint(dataset):
-    return dataset._fingerprint
+    return datasets.fingerprint.generate_fingerprint(dataset)
 
 
-def parallelize(dataset, n_jobs=1, threaded=False):
-    batch_size = 1000
+def parallelize(dataset, batch_size=1000, n_jobs=1, threaded=False):
     prefer = 'threads' if threaded else 'processes'
     parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer=prefer)
     batches = parallel(

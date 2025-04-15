@@ -23,6 +23,7 @@ import warnings
 
 import sentencepiece as spm
 
+
 class Tokenizer:
     unk_token = '<unk>'
     sos_token = '<sos>'
