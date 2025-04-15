@@ -16,7 +16,7 @@ import numpy as np
 
 from .tokenizer import Tokenizer
 from .datasets import TokenDataset
-from .utils import is_ascii
+from .text import is_ascii
 
 
 def vocabulary_stats(tokenizer: Tokenizer):
