@@ -1,5 +1,7 @@
 data:
   bulk_options:
+    split:
+      writer_batch_size: 1000
     encode:
       batch_size: 1000
       num_proc: 4

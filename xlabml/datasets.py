@@ -31,13 +31,34 @@ class TextDataset(data.Dataset):
             path: str, name: Optional[str],
             splits: dict[str, float], split: str,
             column: str = 'text',
+            bulk_options: Optional[dict] = None,
             quiet: bool = False,
     ):
         super().__init__()
         self.column = column
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
-        splits = _split(dataset, splits, quiet)
+        splits = self._split(dataset, splits, bulk_options, quiet)
         self.dataset = splits[split]
+
+    @staticmethod
+    def _split(dataset, splits, bulk_options, quiet):
+        if isinstance(dataset, dict):
+            dataset = datasets.concatenate_datasets(list(dataset.values()))
+        kwargs = bulk_options or {}
+        total = len(dataset)
+        results = {}
+        for name, size in splits.items():
+            if size > 0:
+                size = int(size * total) if isinstance(size, float) else size
+                split, dataset = dataset.train_test_split(train_size=size, shuffle=True, seed=42, **kwargs).values()
+            else:
+                split, dataset = dataset, []
+            results[name] = split
+        if not quiet:
+            print(f'Splits: { {name: len(split) for name, split in results.items()} }')
+            if len(dataset) > 0:
+                warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
+        return results
 
     def __len__(self):
         return len(self.dataset)
@@ -128,25 +149,6 @@ class ChunkDataset(data.Dataset):
         indices = torch.from_numpy(indices)
         x, y = indices[:-1], indices[1:]
         return x, y
-
-
-def _split(dataset, splits, quiet):
-    if isinstance(dataset, (datasets.DatasetDict, datasets.IterableDatasetDict)):
-        dataset = datasets.concatenate_datasets(list(dataset.values()))
-    total = len(dataset)
-    results = {}
-    for name, size in splits.items():
-        if size > 0:
-            size = int(size * total) if isinstance(size, float) else size
-            split, dataset = dataset.train_test_split(train_size=size, seed=42).values()
-        else:
-            split, dataset = dataset, []
-        results[name] = split
-    if not quiet:
-        print(f'Splits: { {name: len(split) for name, split in results.items()} }')
-        if len(dataset) > 0:
-            warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
-    return results
 
 
 def _fingerprint(dataset):

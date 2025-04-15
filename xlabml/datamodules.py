@@ -66,6 +66,10 @@ class XLabDataModule(L.LightningDataModule):
     def _get_bulk_options(self, options):
         options = options or {}
         bulk_options = {
+            'split': {
+                'writer_batch_size': 1000,
+                **options.get('split', {})
+            },
             'encode': {
                 'batch_size': 1000,
                 'num_proc': 4,
@@ -105,6 +109,7 @@ class XLabDataModule(L.LightningDataModule):
                 splits=self.splits,
                 split=split,
                 column=self.column,
+                bulk_options=self.bulk_options['split'],
                 quiet=(i != 0),
             )
             for i, split in enumerate(splits)
@@ -131,7 +136,7 @@ class XLabDataModule(L.LightningDataModule):
             split: TokenDataset(
                 dataset=text_dataset,
                 tokenizer=self.tokenizer,
-                **self.bulk_options['encode'],
+                bulk_options=self.bulk_options['encode'],
             )
             for split, text_dataset in text_datasets.items()
         }
@@ -139,7 +144,7 @@ class XLabDataModule(L.LightningDataModule):
             split: ChunkDataset(
                 dataset=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
-                **self.bulk_options['index'],
+                bulk_options=self.bulk_options['index'],
                 progress=self.progress,
             )
             for split, token_dataset in token_datasets.items()
