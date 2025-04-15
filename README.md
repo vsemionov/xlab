@@ -178,14 +178,17 @@ To export a "clean" checkpoint, containing only the weights and hyperparameters,
 ```
 
 ### Configuration
-All configuration and hyperparameters are exposed in YAML files, passed to the training/validation script.
-Hyperparameters are saved in checkpoints and automatically restored when loading.
-The default settings are in `conf/defaults.yaml`.
-Additional YAML configuration can be specified with the `-c PATH` option.
+Configuration and hyperparameters are read from multiple sources in the following order:
+ - defaults in the code
+ - `conf/defaults.yaml`, implicitly
+ - YAML files, given with the `-c PATH` option
+ - command line options
+
 See `conf/xlab.yaml` for the configuration used to train the current release model.
 Examples of additional options are in `conf/extra`.
-Additional options (or overrides of the above configuration) can be specified on the command line.
 To see the full list, run `./xlab.py --help`.
+
+Hyperparameters are saved in checkpoints and automatically restored when loading the model.
 
 
 ## Generations
