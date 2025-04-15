@@ -92,18 +92,15 @@ class TokenDataset(data.Dataset):
             return {self.column: [np.array(indices) for indices in tokenizer.encode(batch[dataset.column])]}
 
         if dynamic:
-            dataset = dataset.with_transform(transform)
+            return dataset.dataset.with_transform(transform)
         else:
-            dataset = dataset.dataset.map(
+            return dataset.dataset.map(
                 encode,
                 batched=True,
-                remove_columns=dataset.column_names,
+                remove_columns=dataset.dataset.column_names,
                 desc='Encoding',
                 **(bulk_options or {})
-            )
-            dataset = dataset.with_format('numpy')
-
-        return dataset
+            ).with_format('numpy')
 
     def __len__(self):
         return len(self.dataset)
