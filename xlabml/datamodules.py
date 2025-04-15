@@ -79,8 +79,7 @@ class XLabDataModule(L.LightningDataModule):
             },
             'index': {
                 'batch_size': 1000,
-                'n_jobs': 4,
-                'threaded': True,
+                'num_proc': 4,
                 **options.get('index', {})
             },
             'tokenizer_train_load': {

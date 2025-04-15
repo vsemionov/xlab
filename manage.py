@@ -18,12 +18,9 @@ import sys
 from pathlib import Path
 from io import BytesIO
 import hashlib
-import shutil
 
 import torch
 import click
-
-from xlabml.utils import get_cache_dir
 
 
 @click.group()
@@ -53,15 +50,6 @@ def export_checkpoint(checkpoint_path):
         exit(1)
     output_path.write_bytes(data)
     print(f'Saved to: {output_path}')
-
-
-@manage.command()
-def clear_cache():
-    """Clear cache"""
-    cache_dir = get_cache_dir(ensure_exists=False)
-    if cache_dir.exists():
-        print(f'Removing {cache_dir}')
-        shutil.rmtree(cache_dir)
 
 
 if __name__ == '__main__':

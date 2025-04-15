@@ -10,7 +10,6 @@ matplotlib
 numpy
 omegaconf
 pandas
-platformdirs
 rich
 seaborn
 sentencepiece

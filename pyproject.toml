@@ -18,7 +18,6 @@ dependencies = [
     "jsonargparse[signatures]",
     "lightning",
     "numpy",
-    "platformdirs",
     "sentencepiece",
     "torch",
     "torchdata",

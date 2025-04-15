@@ -172,10 +172,6 @@ To export a "clean" checkpoint, containing only the weights and hyperparameters,
 ```shell
 ./xlab.py compute_stats -c conf/xlab.yaml
 ```
-#### Clearing the dataset cache
-```shell
-./manage.py clear-cache
-```
 
 ### Configuration
 Configuration and hyperparameters are read from multiple sources in the following order:

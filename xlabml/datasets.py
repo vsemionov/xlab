@@ -22,7 +22,6 @@ import datasets
 from joblib import Parallel, delayed
 
 from .tokenizer import Tokenizer
-from .utils import progress_bar, cached
 
 
 class TextDataset(data.Dataset):
@@ -51,7 +50,10 @@ class TextDataset(data.Dataset):
             if size > 0:
                 size = int(size * total) if isinstance(size, float) else size
                 split, dataset = dataset.train_test_split(
-                    train_size=size, shuffle=True, seed=42, **(bulk_options or {})
+                    train_size=size,
+                    shuffle=True,
+                    seed=42,
+                    **(bulk_options or {})
                 ).values()
             else:
                 split, dataset = dataset, []
@@ -93,7 +95,11 @@ class TokenDataset(data.Dataset):
             dataset = dataset.with_transform(transform)
         else:
             dataset = dataset.dataset.map(
-                encode, batched=True, remove_columns=dataset.column_names, desc='Encoding', **(bulk_options or {})
+                encode,
+                batched=True,
+                remove_columns=dataset.column_names,
+                desc='Encoding',
+                **(bulk_options or {})
             )
             dataset = dataset.with_format('numpy')
 
@@ -115,23 +121,32 @@ class ChunkDataset(data.Dataset):
             progress: str = 'tqdm',
     ):
         super().__init__()
+        self.column = 'chunks'
         self.dataset = dataset
         self.seq_len = seq_len
         self.step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < self.step_size <= self.seq_len
         self.progress = progress
-        self.index = cached(lambda: self._index(dataset, bulk_options), 'index', _fingerprint(dataset.dataset))
+        self.index = self._index(self.dataset, bulk_options)
 
     def _index(self, dataset, bulk_options):
-        index = []
-        encodings = parallelize(dataset, **(bulk_options or {}))
-        encodings = progress_bar(encodings, kind=self.progress, total=len(dataset), desc='Indexing')
-        for idx, indices in enumerate(encodings):
-            index.extend([(idx, start) for start in range(0, len(indices) + 1, self.step_size)])  # 1 accounts for <sos>
-        # use smaller dtypes to save memory; can be further optimized by using a separate array for the small 2nd index
-        dtype = np.uint32 if len(dataset) < 2**32 else np.uint64
-        index = np.array(index, dtype=dtype)
-        return index
+        def index(batch, ds_idxs):
+            return {
+                self.column: [
+                    (ds_idx, start_idx)
+                    for ds_idx, indices in zip(ds_idxs, batch[dataset.column])
+                    for start_idx in range(0, len(indices) + 1, self.step_size)  # +1 accounts for <sos>
+                ]
+            }
+
+        return dataset.dataset.map(
+            index,
+            with_indices=True,
+            batched=True,
+            remove_columns=dataset.dataset.column_names,
+            desc='Indexing',
+            **(bulk_options or {})
+        )
 
     def __len__(self):
         return len(self.index)
@@ -140,7 +155,7 @@ class ChunkDataset(data.Dataset):
         dataset = self.dataset
         tokenizer = dataset.tokenizer
         window = self.seq_len + 1
-        ds_idx, start_idx = self.index[idx].tolist()
+        ds_idx, start_idx = self.index[idx][self.column]
         end_idx = start_idx + window
         indices = dataset[ds_idx]
         if start_idx > 0:
@@ -159,10 +174,6 @@ class ChunkDataset(data.Dataset):
         indices = torch.from_numpy(indices)
         x, y = indices[:-1], indices[1:]
         return x, y
-
-
-def _fingerprint(dataset):
-    return datasets.fingerprint.generate_fingerprint(dataset)
 
 
 def parallelize(dataset, batch_size=1000, n_jobs=1, threaded=False):

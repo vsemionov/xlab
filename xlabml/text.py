@@ -12,14 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tqdm.auto import tqdm
-from rich.progress import track
+import unicodedata
 
 
-def progress_bar(iterable, kind='tqdm', total=None, desc='Working'):
-    if kind == 'tqdm':
-        return tqdm(iterable, total=total, desc=desc)
-    elif kind == 'rich':
-        return track(iterable, total=total, description=desc)
-    else:
-        assert False
+def is_ascii(char):
+    return ord(char) < 128
+
+
+def is_control(char):
+    return unicodedata.category(char)[0] == 'C'
+
+
+def escape(output: str) -> str:
+    return ''.join(
+        char if not is_control(char) else rf'\u{ord(char):04x}'
+        for char in output
+    )
