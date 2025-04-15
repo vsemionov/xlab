@@ -42,6 +42,7 @@ data:
     input_sentence_size: 0
     num_threads: 4
     max_sentence_length: 1073741824
+  dynamic_encode: false
   progress: tqdm
   step_size: 0.5
   batch_size: 256
