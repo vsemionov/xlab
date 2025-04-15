@@ -37,7 +37,7 @@ class XLabDataModule(L.LightningDataModule):
             num_tokens: int = 10_000,
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
-            num_proc: int = 4,
+            bulk_options: Optional[dict[dict]] = None,
             progress: str = 'tqdm',
             seq_len: int = 128,
             step_size: Union[float, int] = 0.5,
@@ -53,7 +53,7 @@ class XLabDataModule(L.LightningDataModule):
         self.tokenizer_path = tokenizer_path
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
-        self.num_proc = num_proc
+        self.bulk_options = self._get_bulk_options(bulk_options)
         self.progress = progress
         self.seq_len = seq_len
         self.step_size = step_size
@@ -63,11 +63,34 @@ class XLabDataModule(L.LightningDataModule):
         self.persistent_workers = persistent_workers
         self.datasets = {}
 
+    def _get_bulk_options(self, options):
+        options = options or {}
+        bulk_options = {
+            'encode': {
+                'batch_size': 1000,
+                'num_proc': 4,
+                **options.get('encode', {})
+            },
+            'index': {
+                'batch_size': 1000,
+                'n_jobs': 4,
+                'threaded': True,
+                **options.get('index', {})
+            },
+            'tokenizer_train_load': {
+                'batch_size': 1000,
+                'n_jobs': 4,
+                'threaded': False,
+                **options.get('tokenizer_train_load', {})
+            },
+        }
+        return bulk_options
+
     def _create_tokenizer(self, dataset):
         try:
             tokenizer = Tokenizer.load(self.tokenizer_path)
         except FileNotFoundError:
-            texts = parallelize(dataset, n_jobs=self.num_proc)
+            texts = parallelize(dataset, **self.bulk_options['tokenizer_train_load'])
             tokenizer = self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
         return tokenizer
 
@@ -108,7 +131,7 @@ class XLabDataModule(L.LightningDataModule):
             split: TokenDataset(
                 dataset=text_dataset,
                 tokenizer=self.tokenizer,
-                num_proc=self.num_proc,
+                **self.bulk_options['encode'],
             )
             for split, text_dataset in text_datasets.items()
         }
@@ -116,7 +139,8 @@ class XLabDataModule(L.LightningDataModule):
             split: ChunkDataset(
                 dataset=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
-                num_proc=self.num_proc, progress=self.progress,
+                **self.bulk_options['index'],
+                progress=self.progress,
             )
             for split, token_dataset in token_datasets.items()
         }

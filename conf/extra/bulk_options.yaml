@@ -1,0 +1,13 @@
+data:
+  bulk_options:
+    encode:
+      batch_size: 1000
+      num_proc: 4
+    index:
+      batch_size: 1000
+      n_jobs: 4
+      threaded: true
+    tokenizer_train_load:
+      batch_size: 1000
+      n_jobs: 4
+      threaded: false

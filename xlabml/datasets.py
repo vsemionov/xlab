@@ -51,22 +51,21 @@ class TokenDataset(data.Dataset):
             self,
             dataset: TextDataset,
             tokenizer: Tokenizer,
-            num_proc: int = 4,
+            bulk_options: Optional[dict] = None,
     ):
         super().__init__()
         self.column = 'indices'
         self.parent = dataset
         self.tokenizer = tokenizer
-        dataset = self._encode(self.parent, tokenizer, num_proc)
+        dataset = self._encode(self.parent, tokenizer, bulk_options)
         self.dataset = dataset.with_format('numpy', columns=[self.column], output_all_columns=True)
 
-    def _encode(self, dataset, tokenizer, num_proc):
+    def _encode(self, dataset, tokenizer, bulk_options):
         def encode(batch):
             batch[self.column] = tokenizer.encode(batch[dataset.column])
             return batch
-        dataset = dataset.dataset.map(
-            encode, batched=True, batch_size=1000, remove_columns=[dataset.column], num_proc=num_proc, desc='Encoding'
-        )
+        kwargs = bulk_options or {}
+        dataset = dataset.dataset.map(encode, batched=True, remove_columns=[dataset.column], desc='Encoding', **kwargs)
         return dataset
 
     def __len__(self):
@@ -81,20 +80,20 @@ class ChunkDataset(data.Dataset):
             self,
             dataset: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
-            num_proc: int = 4, progress: str = 'tqdm',
+            bulk_options: Optional[dict] = None,
+            progress: str = 'tqdm',
     ):
         super().__init__()
         self.dataset = dataset
         self.seq_len = seq_len
         self.step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < self.step_size <= self.seq_len
-        self.num_proc = num_proc
         self.progress = progress
-        self.index = cached(lambda: self._index(dataset), 'index', _fingerprint(dataset.dataset))
+        self.index = cached(lambda: self._index(dataset, bulk_options), 'index', _fingerprint(dataset.dataset))
 
-    def _index(self, dataset):
+    def _index(self, dataset, bulk_options):
         index = []
-        encodings = parallelize(dataset, n_jobs=self.num_proc, threaded=True)
+        encodings = parallelize(dataset, **(bulk_options or {}))
         encodings = progress_bar(encodings, kind=self.progress, total=len(dataset), desc='Indexing')
         for idx, indices in enumerate(encodings):
             index.extend([(idx, start) for start in range(0, len(indices) + 1, self.step_size)])  # 1 accounts for <sos>
