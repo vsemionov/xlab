@@ -61,10 +61,12 @@ class TokenDataset(data.Dataset):
         self.dataset = dataset.with_format('numpy', columns=[self.column], output_all_columns=True)
 
     def _encode(self, dataset, tokenizer, num_proc):
-        def encode(row):
-            row[self.column] = tokenizer.encode(row[dataset.column])
-            return row
-        dataset = dataset.dataset.map(encode, remove_columns=[dataset.column], num_proc=num_proc, desc='Encoding')
+        def encode(batch):
+            batch[self.column] = tokenizer.encode(batch[dataset.column])
+            return batch
+        dataset = dataset.dataset.map(
+            encode, batched=True, batch_size=1000, remove_columns=[dataset.column], num_proc=num_proc, desc='Encoding'
+        )
         return dataset
 
     def __len__(self):

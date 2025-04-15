@@ -50,6 +50,8 @@ class Tokenizer:
     @classmethod
     def _escape(cls, text):
         # regexes are slow, but contains checks are fast, so run replacements conditionally
+        if isinstance(text, list):
+            return [cls._escape(t) for t in text]
         if cls._replacement in text:
             text = cls._escape_replacement(text)
         if cls._metaspace in text:
@@ -58,6 +60,8 @@ class Tokenizer:
 
     @classmethod
     def _unescape(cls, text):
+        if isinstance(text, list):
+            return [cls._unescape(t) for t in text]
         if cls._replacement in text:
             text = cls._restore_metaspace(text)
             if cls._replacement in text:
@@ -69,6 +73,9 @@ class Tokenizer:
 
     def decode(self, indices: list[int]) -> str:
         return self._unescape(self.processor.decode(indices))
+
+    def tokenize(self, text: str) -> list[str]:
+        return self.processor.encode(self._escape(text), out_type=str)
 
     def get_token(self, index: int) -> str:
         return self.processor.id_to_piece(index)
@@ -190,6 +197,9 @@ if __name__ == '__main__':
         text = 'Hello world!'
         assert tokenizer.decode(tokenizer.encode(text)) == text
 
+        texts = ['Hello world!', 'Batch test']
+        assert tokenizer.decode(tokenizer.encode(texts)) == texts
+
         text = '▁<U-2581>'
         assert tokenizer.decode(tokenizer.encode(text)) == text
 
@@ -206,6 +216,7 @@ if __name__ == '__main__':
         tokenizer = TokenizerTrainer().train([sentence], 358, path)
         path.unlink()
         reps = 10_000
+        sentences = [sentence] * reps
         text = ' '.join([sentence] * reps)
         t0 = time.time()
         indices = tokenizer.encode(text)
@@ -218,13 +229,19 @@ if __name__ == '__main__':
         for _ in range(reps):
             tokenizer.decode(indices)
         t4 = time.time()
+        indices = tokenizer.encode(sentences)
+        t5 = time.time()
+        tokenizer.decode(indices)
+        t6 = time.time()
         print(
             f'Encode speed: {len(text) / (t1 - t0) / 1024**2:,.1f} MB/s for long text,'
             f' {len(sentence) * reps / (t3 - t2) / 1024**2:,.1f} MB/s for short text'
+            f' {len(sentence) * reps / (t5 - t4) / 1024**2:,.1f} MB/s for batched short text'
         )
         print(
             f'Decode speed: {len(text) / (t2 - t1) / 1024**2:,.1f} MB/s for long text,'
             f' {len(sentence) * reps / (t4 - t3) / 1024**2:,.1f} MB/s for short text'
+            f' {len(sentence) * reps / (t6 - t5) / 1024**2:,.1f} MB/s for batched short text'
         )
 
         print('All OK')
