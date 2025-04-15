@@ -183,6 +183,7 @@ Hyperparameters are saved in checkpoints and automatically restored when loading
 The default settings are in `conf/defaults.yaml`.
 Additional YAML configuration can be specified with the `-c PATH` option.
 See `conf/xlab.yaml` for the configuration used to train the current release model.
+Examples of additional options are in `conf/extra`.
 Additional options (or overrides of the above configuration) can be specified on the command line.
 To see the full list, run `./xlab.py --help`.
 
