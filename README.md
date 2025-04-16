@@ -124,6 +124,7 @@ From the command line, run:
 Specifying `-c conf/xlab.yaml` tells the training script to use a larger dataset and model
 (the default ones are intended for quick experiments).
 This will also download and pre-process the dataset, as well as train the tokenizer, which takes about 2 hours total.
+If you can't wait, you can try XLab with a smaller dataset and model - simply don't omit `-c conf/xlab.yaml` everywhere.
 The actual training takes about 10 hours per epoch on an A100 GPU.
 For hardware with less memory, you may need to modify the configuration and decrease the context size and/or batch size.
 By default, the following are saved during training:
