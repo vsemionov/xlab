@@ -3,15 +3,10 @@ click
 datasets
 flit
 jsonargparse[signatures]
-jupyter
 lightning
-matplotlib
 numpy
-omegaconf
-pandas
 requests
 rich
-seaborn
 sentencepiece
 tensorboard
 torch

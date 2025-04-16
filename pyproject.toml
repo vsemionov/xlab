@@ -18,22 +18,15 @@ dependencies = [
     "lightning",
     "numpy",
     "requests",
+    "rich",
     "sentencepiece",
+    "tensorboard",
     "torch",
     "torchdata",
     "tqdm",
 ]
 
 [project.optional-dependencies]
-data = [
-    "jupyter",
-    "matplotlib",
-    "omegaconf",
-    "pandas",
-    "rich",
-    "seaborn",
-    "tensorboard",
-]
 dev = [
     "flit",
 ]
