@@ -123,10 +123,12 @@ From the command line, run:
 ```
 Specifying `-c conf/xlab.yaml` tells the training script to use a larger dataset and model
 (the default ones are intended for quick experiments).
-This will also download and pre-process the dataset, as well as train the tokenizer, which takes about 2 hours total.
-If you can't wait, you can try XLab with a smaller dataset and model - simply don't omit `-c conf/xlab.yaml` everywhere.
+This will first download the dataset and tokenizer, and then encode the dataset, which takes about an hour.
+If you can't wait, you can try XLab with a smaller dataset and model - simply omit `-c conf/xlab.yaml` everywhere.
+
 The actual training takes about 10 hours per epoch on an A100 GPU.
 For hardware with less memory, you may need to modify the configuration and decrease the context size and/or batch size.
+
 By default, the following are saved during training:
  - the tokenizer, in the `tokenizers` directory
  - the configuration and hyperparameters, in YAML format under `logs/version_*`
@@ -159,6 +161,7 @@ To see all inference options, run `./infer.py --help`.
 Checkpoints created during training contain not only the model weights,
 but also the optimizer state and other information needed to resume training from a saved checkpoint.
 This makes the checkpoints 3x larger than the actual model weights.
+
 To export a "clean" checkpoint, containing only the weights and hyperparameters, run:
 ```shell
 ./manage.py export-checkpoint CHECKPOINT_PATH
@@ -169,7 +172,8 @@ To export a "clean" checkpoint, containing only the weights and hyperparameters,
 ```shell
 ./xlab.py validate_data -c conf/xlab.yaml
 ```
-#### Training the tokenizer only
+#### Training the tokenizer
+First, delete the old tokenizer, and then run:
 ```shell
 ./xlab.py train_tokenizer -c conf/xlab.yaml
 ```
