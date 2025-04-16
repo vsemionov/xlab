@@ -58,7 +58,7 @@ class XLabTrainer(Trainer):
         if datamodule.tokenizer_path.exists():
             print(f'Tokenizer already exists: {datamodule.tokenizer_path}')
             return
-        datamodule.create_datasets_and_tokenizer(['train'], level='tokenizer')
+        datamodule.create_datasets_and_tokenizer(['train'], level='tokenizer', force_train=True)
 
     def compute_stats(self, model, datamodule: XLabDataModule, split: str = 'train', sample_size: int = 10_000):
         """Compute vocabulary and dataset statistics"""

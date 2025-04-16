@@ -68,19 +68,24 @@ class XLabDataModule(L.LightningDataModule):
         self.persistent_workers = persistent_workers
         self.datasets = {}
 
-    def _create_tokenizer(self, dataset):
-        try:
-            return Tokenizer.load(self.tokenizer_path)
-        except FileNotFoundError:
-            pass
-        if self.tokenizer_url:
-            download(self.tokenizer_url, self.tokenizer_path)
-            return Tokenizer.load(self.tokenizer_path)
-        else:
-            texts = (text for batch in dataset.dataset.iter(1000) for text in batch[dataset.column])
-            return self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
+    def _create_tokenizer(self, dataset, force_train=False):
+        if not force_train:
+            try:
+                return Tokenizer.load(self.tokenizer_path)
+            except FileNotFoundError:
+                pass
+            if self.tokenizer_url:
+                download(self.tokenizer_url, self.tokenizer_path)
+                return Tokenizer.load(self.tokenizer_path)
+        texts = (text for batch in dataset.dataset.iter(1000) for text in batch[dataset.column])
+        return self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
 
-    def create_datasets_and_tokenizer(self, splits: Optional[Iterable[str]] = None, level: Optional[str] = None):
+    def create_datasets_and_tokenizer(
+            self,
+            splits: Optional[Iterable[str]] = None,
+            level: Optional[str] = None,
+            force_train: bool = False,
+    ):
         splits = splits if splits is not None else list(self.splits)
         assert 'train' in splits or self.tokenizer is not None
 
@@ -99,7 +104,7 @@ class XLabDataModule(L.LightningDataModule):
             return text_datasets
 
         if self.tokenizer is None:
-            self.tokenizer = self._create_tokenizer(text_datasets['train'])
+            self.tokenizer = self._create_tokenizer(text_datasets['train'], force_train=force_train)
             vocab_size = len(self.tokenizer)
             num_tokens = self.num_tokens
             if vocab_size < num_tokens:
