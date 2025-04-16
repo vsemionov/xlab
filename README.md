@@ -164,6 +164,10 @@ To export a "clean" checkpoint, containing only the weights and hyperparameters,
 ```
 
 ### Other actions
+#### Validating training data
+```shell
+./xlab.py validate_data -c conf/xlab.yaml
+```
 #### Training the tokenizer only
 ```shell
 ./xlab.py train_tokenizer -c conf/xlab.yaml

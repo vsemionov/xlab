@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Iterable
 import warnings
 
 import torch
@@ -33,7 +33,7 @@ class XLabDataModule(L.LightningDataModule):
     def __init__(
             self,
             path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
-            splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
+            splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},  # noqa
             column: str = 'text',
             num_tokens: int = 10_000,
             tokenizer_url: Optional[str] = None,
@@ -106,7 +106,7 @@ class XLabDataModule(L.LightningDataModule):
             texts = parallelize(dataset, **self.bulk_options['tokenizer_train_load'])
             return self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
 
-    def create_datasets_and_tokenizer(self, splits=None, tokenizer_only=False):
+    def create_datasets_and_tokenizer(self, splits: Optional[Iterable[str]] = None, level: Optional[str] = None):
         splits = splits if splits is not None else list(self.splits)
         assert 'train' in splits or self.tokenizer is not None
 
@@ -122,6 +122,8 @@ class XLabDataModule(L.LightningDataModule):
             )
             for i, split in enumerate(splits)
         }
+        if level == 'text':
+            return text_datasets
 
         if self.tokenizer is None:
             self.tokenizer = self._create_tokenizer(text_datasets['train'])
@@ -137,8 +139,8 @@ class XLabDataModule(L.LightningDataModule):
                     f'Tokenizer vocabulary has size {vocab_size}, which is more than the configured {num_tokens}. '
                     f'Model dimensions are linked to the configured size, which is incorrect.'
                 )
-        if tokenizer_only:
-            return None
+        if level == 'tokenizer':
+            return self.tokenizer
 
         token_datasets = {
             split: TokenDataset(

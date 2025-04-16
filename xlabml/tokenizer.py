@@ -133,6 +133,7 @@ class TokenizerTrainer:
             **(train_args or {})
         }
         self.train_args = train_args
+        self._valid = True
 
     def _chunk_line(self, line):
         # sentencepiece chokes on lines longer than 65536, so break them at spaces
@@ -142,6 +143,7 @@ class TokenizerTrainer:
         chunks = line.split(' ')
         n = len(chunks)
         if n == 1:
+            self._valid = False
             warnings.warn('Line too long and no more splits possible')
             return
         n = n // 2
@@ -152,12 +154,16 @@ class TokenizerTrainer:
         for chunk in self._chunk_line(right):
             yield chunk
 
+    def _train_generator(self, texts):
+        lines = (Tokenizer._escape(line) for text in texts for line in text.split('\n') if line)
+        chunks = (chunk for line in lines for chunk in self._chunk_line(line) if chunk)
+        return chunks
+
     def train(self, texts: Iterable[str], num_tokens: int, save_path: Union[Path, str]) -> Tokenizer:
         save_path = Path(save_path)
         assert not save_path.exists()
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        lines = (Tokenizer._escape(line) for text in texts for line in text.split('\n') if line)
-        chunks = (chunk for line in lines for chunk in self._chunk_line(line) if chunk)
+        chunks = self._train_generator(texts)
         model = BytesIO()
         kwargs = {
             **self.train_args,
@@ -177,6 +183,13 @@ class TokenizerTrainer:
         save_path.write_bytes(model.getvalue())
         print(f'Saved tokenizer to: {save_path}')
         return Tokenizer.load(model.getvalue())
+
+    def validate_input(self, text: str) -> bool:
+        self._valid = True
+        for _ in self._train_generator([text]):
+            if not self._valid:
+                return False
+        return True
 
     @staticmethod
     def get_pad_index() -> int:
