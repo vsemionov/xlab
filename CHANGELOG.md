@@ -6,6 +6,7 @@
  - Optional encoding on the fly
  - Support continued prompts in inference (not start of sequence)
  - Compute dataset and vocabulary statistics
+ - Data validation
 
 ## [0.1.2] - 2025-04-10
  - Documentation improvements
