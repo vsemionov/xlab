@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import csv
+import base64
 from pathlib import Path
 from typing import Any
 import multiprocessing
@@ -31,21 +32,25 @@ from xlabml.utils import progress_bar
 
 
 class XLabTrainer(Trainer):
-    def validate_data(self, model, datamodule: XLabDataModule, output_path: Path = 'invalid.csv'):
+    def validate_data(self, model, datamodule: XLabDataModule, output_path: Path = 'invalid.csv', dump: bool = False):
         """Validate training data"""
         dataset = datamodule.create_datasets_and_tokenizer(['train'], level='text')['train']
         print(f'Writing results to: {output_path}')
         texts = (text for batch in dataset.dataset.iter(1000) for text in batch[dataset.column])
         texts = progress_bar(texts, kind=datamodule.progress, total=len(dataset), desc='Validating')
         with open(output_path, 'w', newline='') as csvfile:
-            fieldnames = ['index', 'id']
+            fieldnames = ['index', 'id', *(['text_base64'] if dump else [])]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             num_invalid = 0
             for idx, text in enumerate(texts):
                 if not datamodule.tokenizer_trainer.validate_input(text):
                     num_invalid += 1
-                    writer.writerow({'index': idx, 'id': dataset.parent[idx].get('id')})
+                    writer.writerow({
+                        'index': idx,
+                        'id': dataset.parent[idx].get('id'),
+                        **({'text_base64': base64.b64encode(text.encode()).decode()} if dump else {}),
+                    })
         print(f'Results: {len(dataset)} total, {len(dataset) - num_invalid} valid, {num_invalid} invalid')
 
     def train_tokenizer(self, model, datamodule: XLabDataModule):
