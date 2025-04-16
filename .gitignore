@@ -4,6 +4,7 @@
 /venv
 /logs
 /tokenizers
+/invalid.csv
 
 
 # Byte-compiled / optimized / DLL files
