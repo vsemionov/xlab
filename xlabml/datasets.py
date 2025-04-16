@@ -136,7 +136,7 @@ class ChunkDataset(data.Dataset):
             remove_columns=dataset.dataset.column_names,
             num_proc=num_proc,
             desc='Indexing',
-        )
+        ).with_format()
 
     def __len__(self):
         return len(self.index)
