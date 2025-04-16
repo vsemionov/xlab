@@ -90,7 +90,7 @@ class MultiHeadSelfAttention(nn.Module):
         a = q @ k.transpose(2, 3)  # bhnn
         if mask is not None:
             mask = mask.unsqueeze(1)  # b1nn
-            a = a.masked_fill(mask, float('-inf'))
+            a = a.masked_fill_(mask, float('-inf'))
         a = a.softmax(dim=3)  # bhnn
         a = self.dropout(a)
 
