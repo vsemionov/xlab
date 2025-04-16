@@ -23,7 +23,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
-from .datasets import TextDataset, TokenDataset, ChunkDataset, parallelize
+from .datasets import TextDataset, TokenDataset, ChunkDataset
 from .utils import download
 
 
@@ -39,8 +39,8 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer_url: Optional[str] = None,
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
-            bulk_options: Optional[dict[str, dict]] = None,
             dynamic_encode: bool = False,
+            num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
             step_size: Union[float, int] = 0.5,
@@ -57,8 +57,8 @@ class XLabDataModule(L.LightningDataModule):
         self.tokenizer_path = tokenizer_path
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
-        self.bulk_options = self._get_bulk_options(bulk_options)
         self.dynamic_encode = dynamic_encode
+        self.num_proc = num_proc
         self.progress = progress
         self.seq_len = seq_len
         self.step_size = step_size
@@ -67,32 +67,6 @@ class XLabDataModule(L.LightningDataModule):
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
         self.datasets = {}
-
-    def _get_bulk_options(self, options):
-        options = options or {}
-        bulk_options = {
-            'split': {
-                'writer_batch_size': 1000,
-                **options.get('split', {})
-            },
-            'encode': {
-                'batch_size': 1000,
-                'num_proc': 4,
-                **options.get('encode', {})
-            },
-            'index': {
-                'batch_size': 1000,
-                'num_proc': 4,
-                **options.get('index', {})
-            },
-            'tokenizer_train_load': {
-                'batch_size': 1000,
-                'n_jobs': 4,
-                'threaded': False,
-                **options.get('tokenizer_train_load', {})
-            },
-        }
-        return bulk_options
 
     def _create_tokenizer(self, dataset):
         try:
@@ -103,7 +77,7 @@ class XLabDataModule(L.LightningDataModule):
             download(self.tokenizer_url, self.tokenizer_path)
             return Tokenizer.load(self.tokenizer_path)
         else:
-            texts = parallelize(dataset, **self.bulk_options['tokenizer_train_load'])
+            texts = (text for batch in dataset.dataset.iter(1000) for text in batch[dataset.column])
             return self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
 
     def create_datasets_and_tokenizer(self, splits: Optional[Iterable[str]] = None, level: Optional[str] = None):
@@ -117,7 +91,6 @@ class XLabDataModule(L.LightningDataModule):
                 splits=self.splits,
                 split=split,
                 column=self.column,
-                bulk_options=self.bulk_options['split'],
                 quiet=(i != 0),
             )
             for i, split in enumerate(splits)
@@ -147,7 +120,7 @@ class XLabDataModule(L.LightningDataModule):
                 dataset=text_dataset,
                 tokenizer=self.tokenizer,
                 dynamic=self.dynamic_encode,
-                bulk_options=self.bulk_options['encode'],
+                num_proc=self.num_proc,
             )
             for split, text_dataset in text_datasets.items()
         }
@@ -155,7 +128,7 @@ class XLabDataModule(L.LightningDataModule):
             split: ChunkDataset(
                 dataset=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
-                bulk_options=self.bulk_options['index'],
+                num_proc=self.num_proc,
                 progress=self.progress,
             )
             for split, token_dataset in token_datasets.items()

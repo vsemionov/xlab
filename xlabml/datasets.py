@@ -19,7 +19,6 @@ import numpy as np
 import torch
 import torch.utils.data as data
 import datasets
-from joblib import Parallel, delayed
 
 from .tokenizer import Tokenizer
 
@@ -30,18 +29,17 @@ class TextDataset(data.Dataset):
             path: str, name: Optional[str],
             splits: dict[str, float], split: str,
             column: str = 'text',
-            bulk_options: Optional[dict] = None,
             quiet: bool = False,
     ):
         super().__init__()
         self.column = column
         dataset = datasets.load_dataset(path, name, trust_remote_code=True)
-        splits = self._split(dataset, splits, bulk_options, quiet)
+        splits = self._split(dataset, splits, quiet)
         self.parent = splits[split]
         self.dataset = self.parent.select_columns([self.column])
 
     @staticmethod
-    def _split(dataset, splits, bulk_options, quiet):
+    def _split(dataset, splits, quiet):
         if isinstance(dataset, dict):
             dataset = datasets.concatenate_datasets(list(dataset.values()))
         total = len(dataset)
@@ -49,12 +47,7 @@ class TextDataset(data.Dataset):
         for name, size in splits.items():
             if size > 0:
                 size = int(size * total) if isinstance(size, float) else size
-                split, dataset = dataset.train_test_split(
-                    train_size=size,
-                    shuffle=True,
-                    seed=42,
-                    **(bulk_options or {})
-                ).values()
+                split, dataset = dataset.train_test_split(train_size=size, shuffle=True, seed=42).values()
             else:
                 split, dataset = dataset, []
             results[name] = split
@@ -77,15 +70,15 @@ class TokenDataset(data.Dataset):
             dataset: TextDataset,
             tokenizer: Tokenizer,
             dynamic: bool = False,
-            bulk_options: Optional[dict] = None,
+            num_proc: int = 4,
     ):
         super().__init__()
         self.column = 'indices'
         self.parent = dataset
         self.tokenizer = tokenizer
-        self.dataset = self._encode(self.parent, tokenizer, dynamic, bulk_options)
+        self.dataset = self._encode(self.parent, tokenizer, dynamic, num_proc)
 
-    def _encode(self, dataset, tokenizer, dynamic, bulk_options):
+    def _encode(self, dataset, tokenizer, dynamic, num_proc):
         def encode(batch):
             return {self.column: tokenizer.encode(batch[dataset.column])}
         def transform(batch):
@@ -98,8 +91,8 @@ class TokenDataset(data.Dataset):
                 encode,
                 batched=True,
                 remove_columns=dataset.dataset.column_names,
+                num_proc=num_proc,
                 desc='Encoding',
-                **(bulk_options or {})
             ).with_format('numpy')
 
     def __len__(self):
@@ -114,7 +107,7 @@ class ChunkDataset(data.Dataset):
             self,
             dataset: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
-            bulk_options: Optional[dict] = None,
+            num_proc: int = 4,
             progress: str = 'tqdm',
     ):
         super().__init__()
@@ -124,9 +117,9 @@ class ChunkDataset(data.Dataset):
         self.step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < self.step_size <= self.seq_len
         self.progress = progress
-        self.index = self._index(self.dataset, bulk_options)
+        self.index = self._index(self.dataset, num_proc)
 
-    def _index(self, dataset, bulk_options):
+    def _index(self, dataset, num_proc):
         def index(batch, ds_idxs):
             return {
                 self.column: [
@@ -141,8 +134,8 @@ class ChunkDataset(data.Dataset):
             with_indices=True,
             batched=True,
             remove_columns=dataset.dataset.column_names,
+            num_proc=num_proc,
             desc='Indexing',
-            **(bulk_options or {})
         )
 
     def __len__(self):
@@ -171,14 +164,3 @@ class ChunkDataset(data.Dataset):
         indices = torch.from_numpy(indices)
         x, y = indices[:-1], indices[1:]
         return x, y
-
-
-def parallelize(dataset, batch_size=1000, n_jobs=1, threaded=False):
-    prefer = 'threads' if threaded else 'processes'
-    parallel = Parallel(n_jobs=n_jobs, return_as='generator', prefer=prefer)
-    batches = parallel(
-        delayed(dataset.__getitem__)(slice(start, start + batch_size))
-        for start in range(0, len(dataset), batch_size)
-    )
-    samples = (sample for batch in batches for sample in batch)
-    return samples

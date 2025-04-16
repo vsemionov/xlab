@@ -14,7 +14,6 @@ dependencies = [
     "boltons",
     "click",
     "datasets",
-    "joblib",
     "jsonargparse[signatures]",
     "lightning",
     "numpy",

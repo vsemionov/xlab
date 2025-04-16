@@ -2,7 +2,6 @@ boltons
 click
 datasets
 flit
-joblib
 jsonargparse[signatures]
 jupyter
 lightning

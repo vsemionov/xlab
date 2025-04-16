@@ -26,7 +26,6 @@ from lightning.pytorch.cli import LightningCLI
 from xlabml.callbacks import *  # noqa
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModule, XLabModel
-from xlabml.datasets import parallelize
 from xlabml.stats import compute_stats
 from xlabml.utils import progress_bar
 
@@ -36,7 +35,7 @@ class XLabTrainer(Trainer):
         """Validate training data"""
         dataset = datamodule.create_datasets_and_tokenizer(['train'], level='text')['train']
         print(f'Writing results to: {output_path}')
-        texts = parallelize(dataset, **datamodule.bulk_options['tokenizer_train_load'])
+        texts = (text for batch in dataset.dataset.iter(1000) for text in batch[dataset.column])
         texts = progress_bar(texts, kind=datamodule.progress, total=len(dataset), desc='Validating')
         with open(output_path, 'w', newline='') as csvfile:
             fieldnames = ['index', 'id']
