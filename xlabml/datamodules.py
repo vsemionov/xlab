@@ -24,6 +24,7 @@ from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
 from .datasets import TextDataset, TokenDataset, ChunkDataset, parallelize
+from .utils import download
 
 
 class XLabDataModule(L.LightningDataModule):
@@ -35,6 +36,7 @@ class XLabDataModule(L.LightningDataModule):
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},
             column: str = 'text',
             num_tokens: int = 10_000,
+            tokenizer_url: Optional[str] = None,
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
             bulk_options: Optional[dict[dict]] = None,
@@ -51,6 +53,7 @@ class XLabDataModule(L.LightningDataModule):
         self.splits = splits
         self.column = column
         self.num_tokens = num_tokens
+        self.tokenizer_url = tokenizer_url
         self.tokenizer_path = tokenizer_path
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
@@ -93,11 +96,15 @@ class XLabDataModule(L.LightningDataModule):
 
     def _create_tokenizer(self, dataset):
         try:
-            tokenizer = Tokenizer.load(self.tokenizer_path)
+            return Tokenizer.load(self.tokenizer_path)
         except FileNotFoundError:
+            pass
+        if self.tokenizer_url:
+            download(self.tokenizer_url, self.tokenizer_path)
+            return Tokenizer.load(self.tokenizer_path)
+        else:
             texts = parallelize(dataset, **self.bulk_options['tokenizer_train_load'])
-            tokenizer = self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
-        return tokenizer
+            return self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
 
     def create_datasets_and_tokenizer(self, splits=None, tokenizer_only=False):
         splits = splits if splits is not None else list(self.splits)

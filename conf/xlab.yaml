@@ -36,7 +36,8 @@ data:
     predict: 0  # use remainder
   column: text
   num_tokens: 32768
-  tokenizer_path: tokenizers/xlab.tok
+  tokenizer_url: https://github.com/vsemionov/xlab/releases/download/v0.2.0/xlab-32k-99995.tok
+  tokenizer_path: tokenizers/xlab-32k-99995.tok
   tokenizer_train_args:
     character_coverage: 0.99995
     input_sentence_size: 0
