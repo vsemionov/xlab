@@ -39,7 +39,7 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer_url: Optional[str] = None,
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
-            bulk_options: Optional[dict[dict]] = None,
+            bulk_options: Optional[dict[str, dict]] = None,
             dynamic_encode: bool = False,
             progress: str = 'tqdm',
             seq_len: int = 128,
