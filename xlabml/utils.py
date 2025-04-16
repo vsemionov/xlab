@@ -33,7 +33,7 @@ def download(url: str, save_path: Union[Path, str], desc: Optional[str] = None):
     block_size = 32 * 1024
     desc = desc or save_path.name
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-    with (requests.get(url, stream=True) as response):
+    with requests.get(url, stream=True) as response:
         response.raise_for_status()
         total = int(response.headers.get('content-length', 0))
         with open(save_path, 'wb') as file, \
