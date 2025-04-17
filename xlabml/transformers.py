@@ -24,6 +24,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
+from torch.utils import checkpoint
 
 
 class PositionalEncoding(nn.Module):
@@ -105,6 +106,11 @@ class MultiHeadSelfAttention(nn.Module):
         y = self.out_proj(y)  # bnd
 
         return y
+
+
+class CheckpointMultiHeadSelfAttention(MultiHeadSelfAttention):
+    def sdpa(self, q, k, v, mask=None, is_causal=False):
+        return checkpoint.checkpoint(super().sdpa, q, k, v, mask=mask, is_causal=is_causal, use_reentrant=False)
 
 
 class FlashMultiHeadSelfAttention(MultiHeadSelfAttention):
