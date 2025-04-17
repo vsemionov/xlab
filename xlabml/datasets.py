@@ -34,15 +34,15 @@ class TextDataset(data.Dataset):
     ):
         super().__init__()
         self.column = column
-        dataset_dir = DATA_DIR / path / (name or '') / split
+        dataset_dir = DATA_DIR / path / (name or '')
+        split_dir = dataset_dir / split
         try:
-            self.parent = datasets.load_from_disk(dataset_dir)
+            self.parent = datasets.load_from_disk(split_dir)
         except FileNotFoundError:
             dataset = datasets.load_dataset(path, name, trust_remote_code=True)
             splits = self._split(dataset, splits, quiet)
-            for s, d in splits.items():
-                d.save_to_disk(dataset_dir.parent / s)
-            self.parent = datasets.load_from_disk(dataset_dir)  # reload prevents cache miss downstream
+            splits.save_to_disk(dataset_dir)
+            self.parent = datasets.load_from_disk(split_dir)  # reload prevents cache miss downstream
         self.dataset = self.parent.select_columns([self.column])
 
     @staticmethod
@@ -50,7 +50,7 @@ class TextDataset(data.Dataset):
         if isinstance(dataset, dict):
             dataset = datasets.concatenate_datasets(list(dataset.values()))
         total = len(dataset)
-        results = {}
+        results = datasets.DatasetDict()
         for name, size in splits.items():
             if size > 0:
                 size = int(size * total) if isinstance(size, float) else size
