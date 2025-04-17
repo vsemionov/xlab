@@ -3,6 +3,7 @@
 ## [Unreleased]
  - Use FlashAttention
  - Use SentencePiece BPE tokenizer
+ - Increased context length
  - Training speed and memory usage optimizations
  - Download pre-trained tokenizer
  - Optional encoding on the fly
