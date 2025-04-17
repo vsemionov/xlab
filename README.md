@@ -213,7 +213,7 @@ All of these can be reproduced with the included inference script, using random 
  - use a BPE tokenizer, e.g. from tiktoken or sentencepiece
  - group sequences of similar lengths in the same training batches
  - add learning rate scheduling (e.g. cosine with warmup, or reduce lr on plateau)
- - rotary positional embeddings
+ - rotary positional embeddings or ALiBi
  - RMSNorm
  - SwiGLU activation
  - increase the maximum context length, e.g. via gradient checkpointing
