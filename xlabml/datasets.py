@@ -21,6 +21,7 @@ import torch.utils.data as data
 import datasets
 
 from .tokenizer import Tokenizer
+from . import DATA_DIR
 
 
 class TextDataset(data.Dataset):
@@ -33,9 +34,15 @@ class TextDataset(data.Dataset):
     ):
         super().__init__()
         self.column = column
-        dataset = datasets.load_dataset(path, name, trust_remote_code=True)
-        splits = self._split(dataset, splits, quiet)
-        self.parent = splits[split]
+        dataset_dir = DATA_DIR / path / (name or '') / split
+        try:
+            self.parent = datasets.load_from_disk(dataset_dir)
+        except FileNotFoundError:
+            dataset = datasets.load_dataset(path, name, trust_remote_code=True)
+            splits = self._split(dataset, splits, quiet)
+            for s, d in splits.items():
+                d.save_to_disk(dataset_dir.parent / s)
+            self.parent = datasets.load_from_disk(dataset_dir)  # reload prevents cache miss downstream
         self.dataset = self.parent.select_columns([self.column])
 
     @staticmethod

@@ -29,6 +29,7 @@ from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModule, XLabModel
 from xlabml.stats import compute_stats
 from xlabml.utils import progress_bar
+from xlabml import CONF_DIR
 
 
 class XLabTrainer(Trainer):
@@ -118,12 +119,11 @@ def main():
     multiprocessing.set_start_method('fork')  # needed on macos
     delattr(XLabModule, 'configure_optimizers')  # prevents a warning that method will be overridden by configuration
 
-    conf_dir = Path(__file__).parent / 'conf'
     parser_kwargs = {
         subcommand: {
             'default_config_files': [
-                conf_dir / 'defaults.yaml',
-                *([conf_dir / 'extra/dummy.yaml'] if subcommand in XLabCLI.data_subcommands else []),
+                CONF_DIR / 'defaults.yaml',
+                *([CONF_DIR / 'extra/dummy.yaml'] if subcommand in XLabCLI.data_subcommands else []),
             ]
         }
         for subcommand in XLabCLI.subcommands()
