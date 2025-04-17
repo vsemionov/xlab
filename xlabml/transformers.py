@@ -158,6 +158,7 @@ class TransformerDecoder(nn.Module, ParameterInit):
         self.layers = nn.ModuleList([TransformerLayer(d_model, n_heads, d_ff, norm=norm, **kwargs)
             for _ in range(n_layers)])
         self.norm = norm(d_model) if postnorm else None
+        self.merge_op = torch.logical_or if self.invert_mask else torch.logical_and
         causal_mask = self._create_causal_mask(max_len) if causal else None
         self.register_buffer('causal_mask', causal_mask, persistent=False)
         self.reset_parameters()
@@ -178,8 +179,7 @@ class TransformerDecoder(nn.Module, ParameterInit):
             x = self.norm(x)
         return x
 
-    @staticmethod
-    def _merge_masks(causal_mask, seq_mask, seq_len):
+    def _merge_masks(self, causal_mask, seq_mask, seq_len):
         # causal_mask: NN
         # seq_mask: bn
         if causal_mask is None and seq_mask is None:
@@ -192,7 +192,7 @@ class TransformerDecoder(nn.Module, ParameterInit):
             seq_mask = seq_mask.unsqueeze(1)  # b1n
             if causal_mask is None:
                 return seq_mask
-        return causal_mask | seq_mask
+        return self.merge_op(causal_mask, seq_mask)
 
 
 class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
