@@ -11,7 +11,7 @@ trainer:
   gradient_clip_algorithm: norm
 
 model:
-  max_len: 256
+  max_len: 512
   d_model: 512
   position: xlabml.transformers.PositionalEncoding
   n_layers: 6
@@ -48,7 +48,7 @@ data:
   dynamic_encode: false
   progress: tqdm
   step_size: 0.5
-  batch_size: 256
+  batch_size: 64
   pin_memory: true
   num_workers: 4
   persistent_workers: true
