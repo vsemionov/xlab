@@ -80,7 +80,8 @@ class MultiHeadSelfAttention(nn.Module):
         self.out_proj = nn.Linear(d_model, d_model)
 
     def sdpa(self, q, k, v, mask=None):
-        a = q @ k.transpose(2, 3) / math.sqrt(q.size(-1))  # bhnn
+        a = q @ k.transpose(2, 3)  # bhnn
+        a = a / math.sqrt(q.size(-1))
         if mask is not None:
             mask = mask.unsqueeze(1)  # b1nn
             a = a.masked_fill_(mask, float('-inf'))
