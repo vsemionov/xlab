@@ -65,7 +65,7 @@ class XLabTrainer(Trainer):
         """Compute vocabulary and dataset statistics"""
         datamodule.prepare_data()
         tokenizer = datamodule.tokenizer
-        dataset = datamodule.datasets[split].dataset
+        dataset = datamodule.datasets[split]
         stats = compute_stats(tokenizer, dataset, sample_size=sample_size)
         print(
             f'Vocabulary: {len(tokenizer)} total,'
@@ -90,6 +90,7 @@ class XLabTrainer(Trainer):
             f'Mean token length in split: '
             f'{stats["dataset"]["text_size_est"] / stats["dataset"]["token_size_est"]:,.2f} characters'
         )
+        print(f'Mean sequence fill ratio: {stats["dataset"]["seq_fill_ratio_mean"]:.1f}')
 
 
 class XLabCLI(LightningCLI):

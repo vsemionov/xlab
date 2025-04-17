@@ -15,7 +15,7 @@
 import numpy as np
 
 from .tokenizer import Tokenizer
-from .datasets import TokenDataset
+from .datasets import ChunkDataset
 from .text import is_ascii
 
 
@@ -30,27 +30,38 @@ def vocabulary_stats(tokenizer: Tokenizer):
     }
 
 
-def dataset_stats(dataset: TokenDataset, sample_size):
+def dataset_stats(dataset: ChunkDataset, sample_size: int):
     np.random.seed(42)
-    sample_size = min(sample_size, len(dataset))
-    sample_indices = np.random.permutation(sample_size)
-    text_sample = dataset.parent[sample_indices]
-    token_sample = dataset[sample_indices]
+    token_dataset = dataset.dataset
+    tokenizer = token_dataset.tokenizer
+    pad_index = tokenizer[tokenizer.pad_token]
+    text_sample_size = min(sample_size, len(token_dataset))
+    chunk_sample_size = min(sample_size, len(dataset))
+    text_sample_indices = np.random.permutation(text_sample_size)
+    chunk_sample_indices = np.random.permutation(chunk_sample_size)
+    text_sample = token_dataset.parent[text_sample_indices]
+    token_sample = token_dataset[text_sample_indices]
+    chunk_sample = [dataset[int(idx)][0] for idx in chunk_sample_indices]
     text_lengths = np.array([len(text) for text in text_sample])
     token_lengths = np.array([len(indices) for indices in token_sample])
     return {
-        'text_size_est': round(np.sum(text_lengths) * len(dataset) / sample_size),
-        'token_size_est': round(np.sum(token_lengths) * len(dataset) / sample_size),
+        'text_size_est': round(np.sum(text_lengths) * len(token_dataset) / text_sample_size),
+        'token_size_est': round(np.sum(token_lengths) * len(token_dataset) / text_sample_size),
         'text_length_mean': np.mean(text_lengths),
         'text_length_median': np.median(text_lengths),
         'text_length_std': np.std(text_lengths),
         'token_length_mean': np.mean(token_lengths),
         'token_length_median': np.median(token_lengths),
         'token_length_std': np.std(token_lengths),
+        'seq_fill_ratio_mean': np.mean([(chunk != pad_index).sum() for chunk in chunk_sample]) / dataset.seq_len,
     }
 
 
-def compute_stats(tokenizer: Tokenizer, dataset: TokenDataset, sample_size: int = 10_000):
+def compute_stats(
+        tokenizer: Tokenizer,
+        dataset: ChunkDataset,
+        sample_size: int = 10_000
+):
     return {
         'vocabulary': vocabulary_stats(tokenizer),
         'dataset': dataset_stats(dataset, sample_size),
