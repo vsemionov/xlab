@@ -38,8 +38,8 @@ class PositionalEncoding(nn.Module):
         enc[:, 1::2] = torch.cos(p_i)
         self.register_buffer('enc', enc, persistent=False)
 
-    def forward(self, x):
-        return self.enc[:x.size(-2)]
+    def forward(self, n):
+        return self.enc[:n]
 
 
 class PositionalEmbedding(nn.Module):
@@ -49,8 +49,8 @@ class PositionalEmbedding(nn.Module):
         idx = torch.arange(max_len)
         self.register_buffer('idx', idx, persistent=False)
 
-    def forward(self, x):
-        return self.emb(self.idx[:x.size(-2)])
+    def forward(self, n):
+        return self.emb(self.idx[:n])
 
 
 class FeedForward(nn.Module):
@@ -194,7 +194,7 @@ class Transformer(nn.Module):
         self.decoder = decoder(max_len, d_model, n_layers, n_heads, d_ff, dropout=dropout, **kwargs)
 
     def forward(self, x, seq_mask=None):
-        x = x + self.position(x).unsqueeze(0)
+        x = x + self.position(x.size(-2)).unsqueeze(0)
         x = self.dropout(x)
         x = self.decoder(x, seq_mask=seq_mask)
         return x
