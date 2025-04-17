@@ -211,7 +211,7 @@ All of these can be reproduced with the included inference script, using random 
 
 ## Future work
  - use a BPE tokenizer, e.g. from tiktoken or sentencepiece
- - group sequences of similar lengths in the same training batches
+ - batch together sequences of similar lengths, or concatenate short sequences via separator tokens
  - add learning rate scheduling (e.g. cosine with warmup, or reduce lr on plateau)
  - rotary positional embeddings or ALiBi
  - RMSNorm
