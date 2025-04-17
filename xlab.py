@@ -90,7 +90,7 @@ class XLabTrainer(Trainer):
             f'Mean token length in split: '
             f'{stats["dataset"]["text_size_est"] / stats["dataset"]["token_size_est"]:,.2f} characters'
         )
-        print(f'Mean sequence fill ratio: {stats["dataset"]["seq_fill_ratio_mean"]:.1f}')
+        print(f'Mean sequence fill ratio: {stats["dataset"]["seq_fill_ratio_mean"]:.2f}')
 
 
 class XLabCLI(LightningCLI):
