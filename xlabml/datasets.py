@@ -30,19 +30,29 @@ class TextDataset(data.Dataset):
             path: str, name: Optional[str],
             splits: dict[str, float], split: str,
             column: str = 'text',
+            save_splits: bool = False,
+            num_proc: int = 4,
             quiet: bool = False,
     ):
         super().__init__()
         self.column = column
         dataset_dir = DATA_DIR / path / (name or '')
         split_dir = dataset_dir / split
-        try:
-            self.parent = datasets.load_from_disk(split_dir)
-        except FileNotFoundError:
+        parent = None
+        if save_splits:
+            try:
+                parent = datasets.load_from_disk(split_dir)
+            except FileNotFoundError:
+                pass
+        if parent is None:
             dataset = datasets.load_dataset(path, name, trust_remote_code=True)
             splits = self._split(dataset, splits, quiet)
-            splits.save_to_disk(dataset_dir)
-            self.parent = datasets.load_from_disk(split_dir)  # reload prevents cache miss downstream
+            if save_splits:
+                splits.save_to_disk(dataset_dir, num_proc=num_proc)
+                parent = datasets.load_from_disk(split_dir)  # reload prevents cache miss downstream
+            else:
+                parent = splits[split]
+        self.parent = parent
         self.dataset = self.parent.select_columns([self.column])
 
     @staticmethod

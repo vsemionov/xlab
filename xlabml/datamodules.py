@@ -40,6 +40,7 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
             dynamic_encode: bool = False,
+            save_splits: bool = False,
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
@@ -58,6 +59,7 @@ class XLabDataModule(L.LightningDataModule):
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
         self.dynamic_encode = dynamic_encode
+        self.save_splits = save_splits
         self.num_proc = num_proc
         self.progress = progress
         self.seq_len = seq_len
@@ -96,6 +98,8 @@ class XLabDataModule(L.LightningDataModule):
                 splits=self.splits,
                 split=split,
                 column=self.column,
+                save_splits=self.save_splits,
+                num_proc=self.num_proc,
                 quiet=(i != 0),
             )
             for i, split in enumerate(splits)

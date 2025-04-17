@@ -46,6 +46,7 @@ data:
     num_threads: 4
     max_sentence_length: 1073741824
   dynamic_encode: false
+  save_splits: false
   num_proc: 4
   progress: tqdm
   step_size: 0.5
