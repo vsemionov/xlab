@@ -3,6 +3,7 @@
 ## [Unreleased]
  - Use FlashAttention
  - Use SentencePiece BPE tokenizer
+ - Training speed and memory usage optimizations
  - Download pre-trained tokenizer
  - Optional encoding on the fly
  - Support continued prompts in inference (not start of sequence)
