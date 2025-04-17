@@ -216,7 +216,7 @@ All of these can be reproduced with the included inference script, using random 
  - rotary positional embeddings or ALiBi
  - RMSNorm
  - SwiGLU activation
- - increase the maximum context length, e.g. via gradient checkpointing
+ - increase the maximum context length
  - train a larger model on a larger and more diverse dataset
  - fine-tune for a downstream task
  - quantization
