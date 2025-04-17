@@ -79,7 +79,7 @@ class MultiHeadSelfAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.out_proj = nn.Linear(d_model, d_model)
 
-    def sdpa(self, q, k, v, mask=None):
+    def sdpa(self, q, k, v, mask=None, is_causal=False):
         a = q @ k.transpose(2, 3) / math.sqrt(q.size(-1))  # bhnn
         if mask is not None:
             mask = mask.unsqueeze(1)  # b1nn
@@ -91,7 +91,7 @@ class MultiHeadSelfAttention(nn.Module):
 
         return y
 
-    def forward(self, x, mask=None):
+    def forward(self, x, mask=None, is_causal=False):
         b, n, d = x.size()
         h = self.n_heads
         s = d // h
@@ -99,7 +99,7 @@ class MultiHeadSelfAttention(nn.Module):
         q, k, v = self.qkv_proj(x).split(d, dim=2)  # bnd
         q, k, v = [z.view(b, n, h, s).transpose(1, 2) for z in (q, k, v)]  # bhns
 
-        y = self.sdpa(q, k, v, mask=mask)  # bhns
+        y = self.sdpa(q, k, v, mask=mask, is_causal=is_causal)  # bhns
 
         y = y.transpose(1, 2).reshape(b, n, d)  # bnd
         y = self.out_proj(y)  # bnd
@@ -110,9 +110,10 @@ class MultiHeadSelfAttention(nn.Module):
 class FlashMultiHeadSelfAttention(MultiHeadSelfAttention):
     invert_mask = False
 
-    def sdpa(self, q, k, v, mask=None):
+    def sdpa(self, q, k, v, mask=None, is_causal=False):
+        mask = None if is_causal else mask  # flash attention is faster with implicit causal masks
         dropout_p = self.dropout.p if self.training else 0
-        return F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=dropout_p)
+        return F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=dropout_p, is_causal=is_causal)
 
 
 class TransformerLayer(nn.Module):
@@ -132,13 +133,13 @@ class TransformerLayer(nn.Module):
     def invert_mask(self):
         return self.mhsa.invert_mask
 
-    def forward(self, x, mask=None):
+    def forward(self, x, mask=None, is_causal=False):
         if self.prenorm:
-            x = x + self.dropout1(self.mhsa(self.norm1(x), mask=mask))
+            x = x + self.dropout1(self.mhsa(self.norm1(x), mask=mask, is_causal=is_causal))
             x = x + self.dropout2(self.ff(self.norm2(x)))
 
         else:
-            x = self.norm1(x + self.dropout1(self.mhsa(x, mask=mask)))
+            x = self.norm1(x + self.dropout1(self.mhsa(x, mask=mask, is_causal=is_causal)))
             x = self.norm2(x + self.dropout2(self.ff(x)))
 
         return x
@@ -172,9 +173,9 @@ class TransformerDecoder(nn.Module, ParameterInit):
         return ones.triu(diagonal=1) if self.invert_mask else ones.tril(diagonal=0)
 
     def forward(self, x, seq_mask=None):
-        mask = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
+        mask, is_causal = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
         for layer in self.layers:
-            x = layer(x, mask=mask)
+            x = layer(x, mask=mask, is_causal=is_causal)
         if self.norm is not None:
             x = self.norm(x)
         return x
@@ -183,16 +184,16 @@ class TransformerDecoder(nn.Module, ParameterInit):
         # causal_mask: NN
         # seq_mask: bn
         if causal_mask is None and seq_mask is None:
-            return None
+            return None, False
         if causal_mask is not None:
             causal_mask = causal_mask[:seq_len, :seq_len].unsqueeze(0)  # 1nn
             if seq_mask is None:
-                return causal_mask
+                return causal_mask, True
         if seq_mask is not None:
             seq_mask = seq_mask.unsqueeze(1)  # b1n
             if causal_mask is None:
-                return seq_mask
-        return self.merge_op(causal_mask, seq_mask)
+                return seq_mask, False
+        return self.merge_op(causal_mask, seq_mask), False
 
 
 class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
