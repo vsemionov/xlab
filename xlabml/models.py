@@ -115,7 +115,7 @@ class XLabModel(XLabModule):
             position: type[nn.Module] = transformers.PositionalEncoding,
             n_layers: int = 2, n_heads: int = 2, d_ff: int = 256, dropout: float = 0.1, pos_drop: bool = True,
             prenorm: bool = False, postnorm: bool = False, norm: type[nn.Module] = nn.LayerNorm,
-            activation: nn.Module = nn.ReLU(),
+            attention: type[nn.Module] = transformers.MultiHeadSelfAttention, activation: nn.Module = nn.ReLU(),
             block_drop: bool = True, attn_drop: bool = True, ff_drop: bool = True,
             debug: bool = False, dummy: bool = False,
     ):
@@ -124,7 +124,7 @@ class XLabModel(XLabModule):
             position=position, decoder=transformers.TransformerDecoder,
             n_layers=n_layers, n_heads=n_heads, d_ff=d_ff, dropout=dropout, pos_drop=pos_drop,
             prenorm=prenorm, postnorm=postnorm, norm=norm,
-            activation=activation,
+            attention=attention, activation=activation,
             block_drop=block_drop, attn_drop=attn_drop, ff_drop=ff_drop,
             debug=debug, dummy=dummy,
         )

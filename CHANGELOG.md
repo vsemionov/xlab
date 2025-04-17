@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+ - Use FlashAttention
  - Use SentencePiece BPE tokenizer
  - Download pre-trained tokenizer
  - Optional encoding on the fly

@@ -23,6 +23,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.init as init
+import torch.nn.functional as F
 
 
 class PositionalEncoding(nn.Module):
@@ -68,6 +69,8 @@ class FeedForward(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
+    invert_mask = True
+
     def __init__(self, d_model, n_heads, dropout=0.1):
         assert d_model % n_heads == 0
         super().__init__()
@@ -76,16 +79,9 @@ class MultiHeadSelfAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.out_proj = nn.Linear(d_model, d_model)
 
-    def forward(self, x, mask=None):
-        b, n, d = x.size()
-        h = self.n_heads
-        s = d // h
-
-        q, k, v = self.qkv_proj(x).split(d, dim=2)  # bnd
-        q, k, v = [z.view(b, n, h, s).transpose(1, 2) for z in (q, k, v)]  # bhns
-
+    def sdpa(self, q, k, v, mask=None):
         # pre-scale q for memory efficiency
-        q = q / math.sqrt(s)
+        q = q / math.sqrt(q.size(-1))
 
         a = q @ k.transpose(2, 3)  # bhnn
         if mask is not None:
@@ -95,23 +91,49 @@ class MultiHeadSelfAttention(nn.Module):
         a = self.dropout(a)
 
         y = a @ v  # bhns
+
+        return y
+
+    def forward(self, x, mask=None):
+        b, n, d = x.size()
+        h = self.n_heads
+        s = d // h
+
+        q, k, v = self.qkv_proj(x).split(d, dim=2)  # bnd
+        q, k, v = [z.view(b, n, h, s).transpose(1, 2) for z in (q, k, v)]  # bhns
+
+        y = self.sdpa(q, k, v, mask=mask)  # bhns
+
         y = y.transpose(1, 2).reshape(b, n, d)  # bnd
         y = self.out_proj(y)  # bnd
 
         return y
 
 
+class FlashMultiHeadAttention(MultiHeadSelfAttention):
+    invert_mask = False
+
+    def sdpa(self, q, k, v, mask=None):
+        dropout_p = self.dropout.p if self.training else 0
+        return F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=dropout_p)
+
+
 class TransformerLayer(nn.Module):
-    def __init__(self, d_model, n_heads, d_ff, prenorm=False, norm=nn.LayerNorm, activation=nn.ReLU(),
+    def __init__(self, d_model, n_heads, d_ff, prenorm=False, norm=nn.LayerNorm,
+            attention=MultiHeadSelfAttention, activation=nn.ReLU(),
             dropout=0.1, block_drop=True, attn_drop=True, ff_drop=True):
         super().__init__()
         self.prenorm = prenorm
-        self.mhsa = MultiHeadSelfAttention(d_model, n_heads, dropout=(dropout * attn_drop))
+        self.mhsa = attention(d_model, n_heads, dropout=(dropout * attn_drop))
         self.dropout1 = nn.Dropout(dropout * block_drop)
         self.norm1 = norm(d_model)
         self.ff = FeedForward(d_model, d_ff, activation=activation, dropout=(dropout * ff_drop))
         self.dropout2 = nn.Dropout(dropout * block_drop)
         self.norm2 = norm(d_model)
+
+    @property
+    def invert_mask(self):
+        return self.mhsa.invert_mask
 
     def forward(self, x, mask=None):
         if self.prenorm:
@@ -139,9 +161,17 @@ class TransformerDecoder(nn.Module, ParameterInit):
         self.layers = nn.ModuleList([TransformerLayer(d_model, n_heads, d_ff, norm=norm, **kwargs)
             for _ in range(n_layers)])
         self.norm = norm(d_model) if postnorm else None
-        causal_mask = torch.triu(torch.ones(max_len, max_len, dtype=torch.bool), 1) if causal else None
+        causal_mask = self._create_causal_mask(max_len) if causal else None
         self.register_buffer('causal_mask', causal_mask, persistent=False)
         self.reset_parameters()
+
+    @property
+    def invert_mask(self):
+        return self.layers[0].invert_mask
+
+    def _create_causal_mask(self, max_len):
+        ones = torch.ones(max_len, max_len, dtype=torch.bool)
+        return ones.triu(diagonal=1) if self.invert_mask else ones.tril(diagonal=0)
 
     def forward(self, x, seq_mask=None):
         mask = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
@@ -169,6 +199,8 @@ class TransformerDecoder(nn.Module, ParameterInit):
 
 
 class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
+    invert_mask = True
+
     def __init__(self, max_len, d_model, n_layers, n_heads, d_ff, prenorm=False, postnorm=False, norm=nn.LayerNorm,
             causal=False, dropout=0.1, **kwargs):
         kwargs = dict(dropout=dropout, norm_first=prenorm, batch_first=True, **kwargs)
@@ -193,6 +225,10 @@ class Transformer(nn.Module):
         self.dropout = nn.Dropout(dropout * pos_drop)
         self.decoder = decoder(max_len, d_model, n_layers, n_heads, d_ff, dropout=dropout, **kwargs)
 
+    @property
+    def invert_mask(self):
+        return self.decoder.invert_mask
+
     def forward(self, x, seq_mask=None):
         x = x + self.position(x.size(-2)).unsqueeze(0)
         x = self.dropout(x)
@@ -206,10 +242,11 @@ class GenerativeTextTransformer(nn.Module):
         self.pad_index = pad_index if pad_mask else None
         self.embedding = nn.Embedding(n_vocab, d_model, padding_idx=pad_index)
         self.transformer = Transformer(max_len=max_len, d_model=d_model, causal=True, **kwargs)
+        self.pad_cmp = torch.eq if self.transformer.invert_mask else torch.ne
         self.head = nn.Linear(d_model, n_vocab)
 
     def forward(self, x):
-        pad_mask = (x == self.pad_index) if self.pad_index is not None else None
+        pad_mask = self.pad_cmp(x, self.pad_index) if self.pad_index is not None else None
         x = self.embedding(x) * math.sqrt(self.embedding.embedding_dim)
         x = self.transformer(x, seq_mask=pad_mask)
         y = self.head(x)

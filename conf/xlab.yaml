@@ -21,6 +21,7 @@ model:
   prenorm: true
   postnorm: true
   norm: torch.nn.LayerNorm
+  attention: xlabml.transformers.FlashMultiHeadSelfAttention
   activation: torch.nn.GELU
   pos_drop: false
   block_drop: false
