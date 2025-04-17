@@ -107,7 +107,7 @@ class MultiHeadSelfAttention(nn.Module):
         return y
 
 
-class FlashMultiHeadAttention(MultiHeadSelfAttention):
+class FlashMultiHeadSelfAttention(MultiHeadSelfAttention):
     invert_mask = False
 
     def sdpa(self, q, k, v, mask=None):
