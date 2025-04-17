@@ -20,6 +20,7 @@ from .text import is_ascii
 
 
 def vocabulary_stats(tokenizer: Tokenizer):
+    print('Computing vocabulary statistics')
     num_learned = sum(tokenizer.is_learned(index) for index in range(len(tokenizer)))
     char_indices = [index for index in range(len(tokenizer)) if tokenizer.is_char(index)]
     unicode_indices = [index for index in char_indices if not is_ascii(tokenizer.get_token(index))]
@@ -31,6 +32,7 @@ def vocabulary_stats(tokenizer: Tokenizer):
 
 
 def dataset_stats(dataset: TokenDataset, sample_size):
+    print('Computing dataset statistics')
     np.random.seed(42)
     sample_size = min(sample_size, len(dataset))
     sample_indices = np.random.permutation(sample_size)
