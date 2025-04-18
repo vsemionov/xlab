@@ -6,7 +6,6 @@
 - Increased context length
 - Added gradient checkpointing
 - Training speed and memory usage optimizations
-- Added dataset and vocabulary statistics
 - Support combining multiple hub datasets
 - Download pre-trained tokenizer
 - Optional encoding on the fly

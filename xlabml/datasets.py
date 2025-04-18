@@ -38,14 +38,30 @@ class HubLocation:
         return {k: v for k, v in asdict(self).items() if k not in exclude}
 
 
-class TextDataset(data.Dataset):
+class BaseDataset(data.Dataset):
+    def __init__(self, column: str, parent: Union['BaseDataset', hf_datasets.Dataset], dataset: hf_datasets.Dataset):
+        super().__init__()
+        self.column = column
+        self.parent = parent
+        self.dataset = dataset
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        return self.dataset[idx][self.column]
+
+    def __iter__(self):
+        return (item for batch in self.dataset.iter(1000) for item in batch[self.column])
+
+
+class TextDataset(BaseDataset):
     def __init__(
             self,
             locations: Union[HubLocation, list[HubLocation]],
             splits: dict[str, float], split: str,
             quiet: bool = False,
     ):
-        super().__init__()
         if isinstance(locations, HubLocation):
             locations = [locations]
         column = 'text'
@@ -55,11 +71,10 @@ class TextDataset(data.Dataset):
         datasets = [d for ds in datasets for d in (ds.values() if isinstance(ds, dict) else [ds])]
         dataset = hf_datasets.concatenate_datasets(datasets)
         splits = self._split(dataset, splits, quiet)
-        source = splits[split]
-        self.column = column
-        self.parent = None
-        self.source = source
-        self.dataset = source.select_columns([self.column])
+        parent = splits[split]
+        dataset = parent.select_columns(column)
+        super().__init__(column=column, parent=parent, dataset=dataset)
+        self.split = split
 
     @staticmethod
     def _split(dataset, splits, quiet):
@@ -78,14 +93,8 @@ class TextDataset(data.Dataset):
                 warnings.warn(f'Unused samples: {len(dataset)} out of {total}')
         return results
 
-    def __len__(self):
-        return len(self.dataset)
 
-    def __getitem__(self, idx):
-        return self.dataset[idx][self.column]
-
-
-class TokenDataset(data.Dataset):
+class TokenDataset(BaseDataset):
     def __init__(
             self,
             parent: TextDataset,
@@ -93,18 +102,17 @@ class TokenDataset(data.Dataset):
             dynamic: bool = False,
             num_proc: int = 4,
     ):
-        super().__init__()
+        column = 'indices'
+        dataset = self._encode(parent, tokenizer, column, dynamic, num_proc)
+        super().__init__(column=column, parent=parent, dataset=dataset)
         self.tokenizer = tokenizer
-        self.column = 'indices'
-        self.parent = parent
-        self.source = parent.dataset
-        self.dataset = self._encode(self.parent, tokenizer, dynamic, num_proc)
 
-    def _encode(self, parent, tokenizer, dynamic, num_proc):
+    @staticmethod
+    def _encode(parent, tokenizer, column, dynamic, num_proc):
         def encode(batch):
-            return {self.column: tokenizer.encode(batch[parent.column])}
+            return {column: tokenizer.encode(batch[parent.column])}
         def transform(batch):
-            return {self.column: [np.array(indices) for indices in tokenizer.encode(batch[parent.column])]}
+            return {column: [np.array(indices) for indices in tokenizer.encode(batch[parent.column])]}
 
         if dynamic:
             return parent.dataset.with_transform(transform)
@@ -117,37 +125,29 @@ class TokenDataset(data.Dataset):
                 desc='Encoding',
             ).with_format('numpy')
 
-    def __len__(self):
-        return len(self.dataset)
 
-    def __getitem__(self, idx):
-        return self.dataset[idx][self.column]
-
-
-class SequenceDataset(data.Dataset):
+class SequenceDataset(BaseDataset):
     def __init__(
             self,
             parent: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
             num_proc: int = 4,
     ):
-        super().__init__()
         step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < step_size <= seq_len
+        column = 'indices'
+        dataset = self._index(parent, column, step_size, num_proc)
+        super().__init__(column=column, parent=parent, dataset=dataset)
         self.seq_len = seq_len
-        self.step_size = step_size
-        self.column = 'index'
-        self.parent = parent
-        self.source = parent.dataset
-        self.dataset = self._index(parent, num_proc)
 
-    def _index(self, parent, num_proc):
+    @staticmethod
+    def _index(parent, column, step_size, num_proc):
         def index(batch, ds_idxs):
             return {
-                self.column: [
+                column: [
                     (parent_idx, start_idx)
                     for parent_idx, indices in zip(ds_idxs, batch[parent.column])
-                    for start_idx in range(0, len(indices) + 1, self.step_size)  # +1 accounts for <sos>
+                    for start_idx in range(0, len(indices) + 1, step_size)  # +1 accounts for <sos>
                 ]
             }
 
@@ -159,9 +159,6 @@ class SequenceDataset(data.Dataset):
             num_proc=num_proc,
             desc='Indexing',
         ).with_format()
-
-    def __len__(self):
-        return len(self.dataset)
 
     def __getitem__(self, idx):
         parent = self.parent

@@ -75,8 +75,7 @@ class XLabDataModule(L.LightningDataModule):
             if self.tokenizer_url:
                 download(self.tokenizer_url, self.tokenizer_path)
                 return Tokenizer.load(self.tokenizer_path)
-        texts = (text for batch in text_dataset.dataset.iter(1000) for text in batch[text_dataset.column])
-        return self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
+        return self.tokenizer_trainer.train(text_dataset, self.num_tokens, self.tokenizer_path)
 
     def create_datasets_and_tokenizer(
             self,
