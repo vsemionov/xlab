@@ -5,8 +5,9 @@
 - Use SentencePiece BPE tokenizer
 - Increased context length
 - Added gradient checkpointing
-- Added dataset and vocabulary statistics
 - Training speed and memory usage optimizations
+- Added dataset and vocabulary statistics
+- Support combining multiple hub datasets
 - Download pre-trained tokenizer
 - Optional encoding on the fly
 - Support continued prompts in inference (not start of sequence)

@@ -40,7 +40,7 @@ class XLabTrainer(Trainer):
         texts = (text for batch in text_dataset.dataset.iter(1000) for text in batch[text_dataset.column])
         texts = progress_bar(texts, kind=datamodule.progress, total=len(text_dataset), desc='Validating')
         with open(output_path, 'w', newline='') as csvfile:
-            fieldnames = ['index', 'id', *(['text_b64'] if dump else [])]
+            fieldnames = ['index', *(['text_b64'] if dump else [])]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             num_invalid = 0
@@ -49,7 +49,6 @@ class XLabTrainer(Trainer):
                     num_invalid += 1
                     writer.writerow({
                         'index': idx,
-                        'id': text_dataset.source[idx].get('id'),
                         **({'text_b64': base64.b64encode(text.encode()).decode()} if dump else {}),
                     })
         print(f'Results: {len(text_dataset)} total, {len(text_dataset) - num_invalid} valid, {num_invalid} invalid')

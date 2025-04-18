@@ -29,14 +29,18 @@ model:
   ff_drop: true
 
 data:
-  path: wikimedia/wikipedia
-  name: 20231101.en
+  locations:
+    - path: wikimedia/wikipedia
+      name: 20231101.en
+      split: null
+      trust_remote_code: true
+      column: text
+      prune: false
   splits:
     train: 0.9
     val: 0.05
     test: 0.025
     predict: 0  # use remainder
-  column: text
   num_tokens: 32768
   tokenizer_url: https://github.com/vsemionov/xlab/releases/download/v0.2.0/xlab-32k-99995.tok
   tokenizer_path: tokenizers/xlab-32k-99995.tok
@@ -46,7 +50,6 @@ data:
     num_threads: 4
     max_sentence_length: 1073741824
   dynamic_encode: false
-  save_splits: false
   num_proc: 4
   progress: tqdm
   step_size: 0.5

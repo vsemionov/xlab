@@ -12,56 +12,59 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from dataclasses import dataclass, asdict
 from typing import Optional, Union
 import warnings
 
 import numpy as np
 import torch
 import torch.utils.data as data
-import datasets
+import datasets as hf_datasets
 
 from .tokenizer import Tokenizer
-from . import DATA_DIR
+
+
+@dataclass
+class HubLocation:
+    path: str
+    name: Optional[str] = None
+    split: Optional[str] = None
+    trust_remote_code: bool = False
+    column: str = 'text'
+    prune: bool = False
+
+    def to_load_kwargs(self):
+        exclude = {'column', 'prune'}
+        return {k: v for k, v in asdict(self).items() if k not in exclude}
 
 
 class TextDataset(data.Dataset):
     def __init__(
             self,
-            path: str, name: Optional[str],
+            locations: Union[HubLocation, list[HubLocation]],
             splits: dict[str, float], split: str,
-            column: str = 'text',
-            save_splits: bool = False,
-            num_proc: int = 4,
             quiet: bool = False,
     ):
         super().__init__()
-        dataset_dir = DATA_DIR / path / (name or '')
-        split_dir = dataset_dir / split
-        source = None
-        if save_splits:
-            try:
-                source = datasets.load_from_disk(split_dir)
-            except FileNotFoundError:
-                pass
-        if source is None:
-            dataset = datasets.load_dataset(path, name, trust_remote_code=True)
-            splits = self._split(dataset, splits, quiet)
-            if save_splits:
-                splits.save_to_disk(dataset_dir, num_proc=num_proc)
-                source = datasets.load_from_disk(split_dir)  # reload prevents cache miss downstream
-            else:
-                source = splits[split]
+        if isinstance(locations, HubLocation):
+            locations = [locations]
+        column = 'text'
+        datasets = [hf_datasets.load_dataset(**location.to_load_kwargs()) for location in locations]
+        datasets = [d.select_columns(l.column) if l.prune else d for l, d in zip(locations, datasets)]
+        datasets = [d.rename_column(l.column, column) if l.column != column else d for l, d in zip(locations, datasets)]
+        datasets = [d for ds in datasets for d in (ds.values() if isinstance(ds, dict) else [ds])]
+        dataset = hf_datasets.concatenate_datasets(datasets)
+        splits = self._split(dataset, splits, quiet)
+        source = splits[split]
         self.column = column
         self.parent = None
         self.source = source
-        self.dataset = source.select_columns([column])
+        self.dataset = source.select_columns([self.column])
 
     @staticmethod
     def _split(dataset, splits, quiet):
-        if isinstance(dataset, dict):
-            dataset = datasets.concatenate_datasets(list(dataset.values()))
         total = len(dataset)
-        results = datasets.DatasetDict()
+        results = hf_datasets.DatasetDict()
         for name, size in splits.items():
             if size > 0:
                 size = int(size * total) if isinstance(size, float) else size

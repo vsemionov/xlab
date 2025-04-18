@@ -23,7 +23,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
-from .datasets import TextDataset, TokenDataset, SequenceDataset
+from .datasets import HubLocation, TextDataset, TokenDataset, SequenceDataset
 from .utils import download
 
 
@@ -32,15 +32,14 @@ class XLabDataModule(L.LightningDataModule):
 
     def __init__(
             self,
-            path: str = 'wikipedia', name: Optional[str] = '20220301.simple',
+            locations: Union[HubLocation, list[HubLocation]] = \
+                    dict(path='wikipedia', name='20220301.simple', trust_remote_code=True, column='text'),  # noqa
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},  # noqa
-            column: str = 'text',
             num_tokens: int = 10_000,
             tokenizer_url: Optional[str] = None,
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
             dynamic_encode: bool = False,
-            save_splits: bool = False,
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
@@ -49,17 +48,14 @@ class XLabDataModule(L.LightningDataModule):
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.path = path
-        self.name = name
+        self.locations = locations
         self.splits = splits
-        self.column = column
         self.num_tokens = num_tokens
         self.tokenizer_url = tokenizer_url
         self.tokenizer_path = tokenizer_path
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
         self.dynamic_encode = dynamic_encode
-        self.save_splits = save_splits
         self.num_proc = num_proc
         self.progress = progress
         self.seq_len = seq_len
@@ -93,13 +89,9 @@ class XLabDataModule(L.LightningDataModule):
 
         text_datasets = {
             split: TextDataset(
-                path=self.path,
-                name=self.name,
+                locations=self.locations,
                 splits=self.splits,
                 split=split,
-                column=self.column,
-                save_splits=self.save_splits,
-                num_proc=self.num_proc,
                 quiet=(i != 0),
             )
             for i, split in enumerate(splits)
