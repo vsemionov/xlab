@@ -126,7 +126,7 @@ class XLabDataModule(L.LightningDataModule):
 
         token_datasets = {
             split: TokenDataset(
-                dataset=text_dataset,
+                parent=text_dataset,
                 tokenizer=self.tokenizer,
                 dynamic=self.dynamic_encode,
                 num_proc=self.num_proc,
@@ -135,10 +135,9 @@ class XLabDataModule(L.LightningDataModule):
         }
         chunk_datasets = {
             split: ChunkDataset(
-                dataset=token_dataset,
+                parent=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
                 num_proc=self.num_proc,
-                progress=self.progress,
             )
             for split, token_dataset in token_datasets.items()
         }

@@ -32,14 +32,15 @@ def vocabulary_stats(tokenizer: Tokenizer):
 
 def dataset_stats(dataset: ChunkDataset, sample_size: int):
     np.random.seed(42)
-    token_dataset = dataset.dataset
+    token_dataset = dataset.parent
+    text_dataset = token_dataset.parent
     tokenizer = token_dataset.tokenizer
     pad_index = tokenizer[tokenizer.pad_token]
     text_sample_size = min(sample_size, len(token_dataset))
     chunk_sample_size = min(sample_size, len(dataset))
     text_sample_indices = np.random.permutation(text_sample_size)
     chunk_sample_indices = np.random.permutation(chunk_sample_size)
-    text_sample = token_dataset.parent[text_sample_indices]
+    text_sample = text_dataset[text_sample_indices]
     token_sample = token_dataset[text_sample_indices]
     chunk_sample = [dataset[int(idx)][0] for idx in chunk_sample_indices]
     text_lengths = np.array([len(text) for text in text_sample])

@@ -35,25 +35,26 @@ class TextDataset(data.Dataset):
             quiet: bool = False,
     ):
         super().__init__()
-        self.column = column
         dataset_dir = DATA_DIR / path / (name or '')
         split_dir = dataset_dir / split
-        parent = None
+        source = None
         if save_splits:
             try:
-                parent = datasets.load_from_disk(split_dir)
+                source = datasets.load_from_disk(split_dir)
             except FileNotFoundError:
                 pass
-        if parent is None:
+        if source is None:
             dataset = datasets.load_dataset(path, name, trust_remote_code=True)
             splits = self._split(dataset, splits, quiet)
             if save_splits:
                 splits.save_to_disk(dataset_dir, num_proc=num_proc)
-                parent = datasets.load_from_disk(split_dir)  # reload prevents cache miss downstream
+                source = datasets.load_from_disk(split_dir)  # reload prevents cache miss downstream
             else:
-                parent = splits[split]
-        self.parent = parent
-        self.dataset = self.parent.select_columns([self.column])
+                source = splits[split]
+        self.column = column
+        self.parent = None
+        self.source = source
+        self.dataset = source.select_columns([column])
 
     @staticmethod
     def _split(dataset, splits, quiet):
@@ -84,30 +85,31 @@ class TextDataset(data.Dataset):
 class TokenDataset(data.Dataset):
     def __init__(
             self,
-            dataset: TextDataset,
+            parent: TextDataset,
             tokenizer: Tokenizer,
             dynamic: bool = False,
             num_proc: int = 4,
     ):
         super().__init__()
-        self.column = 'indices'
-        self.parent = dataset
         self.tokenizer = tokenizer
+        self.column = 'indices'
+        self.parent = parent
+        self.source = parent.dataset
         self.dataset = self._encode(self.parent, tokenizer, dynamic, num_proc)
 
-    def _encode(self, dataset, tokenizer, dynamic, num_proc):
+    def _encode(self, parent, tokenizer, dynamic, num_proc):
         def encode(batch):
-            return {self.column: tokenizer.encode(batch[dataset.column])}
+            return {self.column: tokenizer.encode(batch[parent.column])}
         def transform(batch):
-            return {self.column: [np.array(indices) for indices in tokenizer.encode(batch[dataset.column])]}
+            return {self.column: [np.array(indices) for indices in tokenizer.encode(batch[parent.column])]}
 
         if dynamic:
-            return dataset.dataset.with_transform(transform)
+            return parent.dataset.with_transform(transform)
         else:
-            return dataset.dataset.map(
+            return parent.dataset.map(
                 encode,
                 batched=True,
-                remove_columns=dataset.dataset.column_names,
+                remove_columns=parent.dataset.column_names,
                 num_proc=num_proc,
                 desc='Encoding',
             ).with_format('numpy')
@@ -122,49 +124,49 @@ class TokenDataset(data.Dataset):
 class ChunkDataset(data.Dataset):
     def __init__(
             self,
-            dataset: TokenDataset,
+            parent: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
             num_proc: int = 4,
-            progress: str = 'tqdm',
     ):
         super().__init__()
-        self.column = 'chunks'
-        self.dataset = dataset
+        step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
+        assert 0 < step_size <= seq_len
         self.seq_len = seq_len
-        self.step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
-        assert 0 < self.step_size <= self.seq_len
-        self.progress = progress
-        self.index = self._index(self.dataset, num_proc)
+        self.step_size = step_size
+        self.column = 'index'
+        self.parent = parent
+        self.source = parent.dataset
+        self.dataset = self._index(parent, num_proc)
 
-    def _index(self, dataset, num_proc):
+    def _index(self, parent, num_proc):
         def index(batch, ds_idxs):
             return {
                 self.column: [
-                    (ds_idx, start_idx)
-                    for ds_idx, indices in zip(ds_idxs, batch[dataset.column])
+                    (parent_idx, start_idx)
+                    for parent_idx, indices in zip(ds_idxs, batch[parent.column])
                     for start_idx in range(0, len(indices) + 1, self.step_size)  # +1 accounts for <sos>
                 ]
             }
 
-        return dataset.dataset.map(
+        return parent.dataset.map(
             index,
             with_indices=True,
             batched=True,
-            remove_columns=dataset.dataset.column_names,
+            remove_columns=parent.dataset.column_names,
             num_proc=num_proc,
             desc='Indexing',
         ).with_format()
 
     def __len__(self):
-        return len(self.index)
+        return len(self.dataset)
 
     def __getitem__(self, idx):
-        dataset = self.dataset
-        tokenizer = dataset.tokenizer
+        parent = self.parent
+        tokenizer = parent.tokenizer
         window = self.seq_len + 1
-        ds_idx, start_idx = self.index[idx][self.column]
+        parent_idx, start_idx = self.dataset[idx][self.column]
         end_idx = start_idx + window
-        indices = dataset[ds_idx]
+        indices = parent[parent_idx]
         if start_idx > 0:
             start_idx -= 1
             end_idx -= 1

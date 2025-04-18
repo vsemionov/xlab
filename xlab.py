@@ -49,7 +49,7 @@ class XLabTrainer(Trainer):
                     num_invalid += 1
                     writer.writerow({
                         'index': idx,
-                        'id': dataset.parent[idx].get('id'),
+                        'id': dataset.source[idx].get('id'),
                         **({'text_b64': base64.b64encode(text.encode()).decode()} if dump else {}),
                     })
         print(f'Results: {len(dataset)} total, {len(dataset) - num_invalid} valid, {num_invalid} invalid')
@@ -75,7 +75,7 @@ class XLabTrainer(Trainer):
         )
         print(f'Split: {split}')
         print(
-            f'Size: {len(dataset.dataset):,} texts,'
+            f'Size: {len(dataset.parent):,} texts,'
             f' {stats["dataset"]["text_size_est"]:,} characters (est.),'
             f' {stats["dataset"]["token_size_est"]:,} tokens (est.)')
         print(
