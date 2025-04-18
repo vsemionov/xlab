@@ -121,7 +121,7 @@ class TokenDataset(data.Dataset):
         return self.dataset[idx][self.column]
 
 
-class ChunkDataset(data.Dataset):
+class SequenceDataset(data.Dataset):
     def __init__(
             self,
             parent: TokenDataset,

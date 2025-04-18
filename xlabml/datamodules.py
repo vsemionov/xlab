@@ -23,7 +23,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
-from .datasets import TextDataset, TokenDataset, ChunkDataset
+from .datasets import TextDataset, TokenDataset, SequenceDataset
 from .utils import download
 
 
@@ -133,15 +133,15 @@ class XLabDataModule(L.LightningDataModule):
             )
             for split, text_dataset in text_datasets.items()
         }
-        chunk_datasets = {
-            split: ChunkDataset(
+        sequence_datasets = {
+            split: SequenceDataset(
                 parent=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
                 num_proc=self.num_proc,
             )
             for split, token_dataset in token_datasets.items()
         }
-        return chunk_datasets
+        return sequence_datasets
 
     def prepare_data(self):
         self.datasets = self.create_datasets_and_tokenizer()

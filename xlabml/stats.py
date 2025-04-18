@@ -15,7 +15,7 @@
 import numpy as np
 
 from .tokenizer import Tokenizer
-from .datasets import ChunkDataset
+from .datasets import SequenceDataset
 from .text import is_ascii
 
 
@@ -30,7 +30,7 @@ def vocabulary_stats(tokenizer: Tokenizer):
     }
 
 
-def dataset_stats(dataset: ChunkDataset, sample_size: int):
+def dataset_stats(dataset: SequenceDataset, sample_size: int):
     np.random.seed(42)
     token_dataset = dataset.parent
     text_dataset = token_dataset.parent
@@ -60,7 +60,7 @@ def dataset_stats(dataset: ChunkDataset, sample_size: int):
 
 def compute_stats(
         tokenizer: Tokenizer,
-        dataset: ChunkDataset,
+        dataset: SequenceDataset,
         sample_size: int = 10_000
 ):
     return {
