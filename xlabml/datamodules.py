@@ -70,7 +70,7 @@ class XLabDataModule(L.LightningDataModule):
         self.persistent_workers = persistent_workers
         self.datasets = {}
 
-    def _create_tokenizer(self, dataset, force_train=False):
+    def _create_tokenizer(self, text_dataset, force_train=False):
         if not force_train:
             try:
                 return Tokenizer.load(self.tokenizer_path)
@@ -79,7 +79,7 @@ class XLabDataModule(L.LightningDataModule):
             if self.tokenizer_url:
                 download(self.tokenizer_url, self.tokenizer_path)
                 return Tokenizer.load(self.tokenizer_path)
-        texts = (text for batch in dataset.dataset.iter(1000) for text in batch[dataset.column])
+        texts = (text for batch in text_dataset.dataset.iter(1000) for text in batch[text_dataset.column])
         return self.tokenizer_trainer.train(texts, self.num_tokens, self.tokenizer_path)
 
     def create_datasets_and_tokenizer(

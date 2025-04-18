@@ -35,10 +35,10 @@ from xlabml import CONF_DIR
 class XLabTrainer(Trainer):
     def validate_data(self, model, datamodule: XLabDataModule, output_path: Path = 'invalid.csv', dump: bool = False):
         """Validate training data"""
-        dataset = datamodule.create_datasets_and_tokenizer(['train'], level='text')['train']
+        text_dataset = datamodule.create_datasets_and_tokenizer(['train'], level='text')['train']
         print(f'Writing results to: {output_path}')
-        texts = (text for batch in dataset.dataset.iter(1000) for text in batch[dataset.column])
-        texts = progress_bar(texts, kind=datamodule.progress, total=len(dataset), desc='Validating')
+        texts = (text for batch in text_dataset.dataset.iter(1000) for text in batch[text_dataset.column])
+        texts = progress_bar(texts, kind=datamodule.progress, total=len(text_dataset), desc='Validating')
         with open(output_path, 'w', newline='') as csvfile:
             fieldnames = ['index', 'id', *(['text_b64'] if dump else [])]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -49,10 +49,10 @@ class XLabTrainer(Trainer):
                     num_invalid += 1
                     writer.writerow({
                         'index': idx,
-                        'id': dataset.source[idx].get('id'),
+                        'id': text_dataset.source[idx].get('id'),
                         **({'text_b64': base64.b64encode(text.encode()).decode()} if dump else {}),
                     })
-        print(f'Results: {len(dataset)} total, {len(dataset) - num_invalid} valid, {num_invalid} invalid')
+        print(f'Results: {len(text_dataset)} total, {len(text_dataset) - num_invalid} valid, {num_invalid} invalid')
 
     def train_tokenizer(self, model, datamodule: XLabDataModule):
         """Train the tokenizer"""
