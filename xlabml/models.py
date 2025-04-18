@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC, abstractmethod
 from typing import Optional
 import warnings
 
@@ -27,8 +26,8 @@ from lightning.pytorch.utilities import grad_norm
 from . import transformers
 
 
-class XLabModule(L.LightningModule, ABC):
-    @abstractmethod
+class XLabModule(L.LightningModule):
+    """XLab model base"""
     def __init__(
             self,
             n_vocab, max_len, d_model, pad_index: Optional[int],
