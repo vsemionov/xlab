@@ -8,30 +8,30 @@
 Transformer Lab - experimental implementations and training of LLMs at scale, using modern techniques.
 
 It features:
- - Simple, efficient implementations, and a modular design
- - Seamless parallel and reproducible training on multiple GPUs
- - Easily configurable architecture modifications and training procedure
- - Inference using multiple generation strategies
+- Simple, efficient implementations, and a modular design
+- Seamless parallel and reproducible training on multiple GPUs
+- Easily configurable architecture modifications and training procedure
+- Inference using multiple generation strategies
 
 
 ## Model
 A transformer decoder architecture ([Vaswani et al. 2017](https://arxiv.org/abs/1706.03762))
 with the following modifications:
- - Normalization is performed before the transformer sublayers.
-   An extra normalization layer is added after the last feedforward sublayer.
-   This improved both performance and training stability.
- - The GELU activation function is used (performance improvement)
- - Dropout is only applied in the attention and feedforward sublayers
-   (to the product of the queries and keys, and to the hidden activations, respectively)
-   (performance improvement)
+- Normalization is performed before the transformer sublayers.
+  An extra normalization layer is added after the last feedforward sublayer.
+  This improved both performance and training stability.
+- The GELU activation function is used (performance improvement)
+- Dropout is only applied in the attention and feedforward sublayers
+  (to the product of the queries and keys, and to the hidden activations, respectively)
+  (performance improvement)
 
 Positional encodings are used, because learned positional embeddings degrade performance in the current setup.
 
 
 ## Tokenizer
 The following criteria were used to select a tokenization algorithm:
- - Able to encode any Unicode string without resorting to "unknown" tokens
- - Perfectly reversible (no information loss during preprocessing)
+- Able to encode any Unicode string without resorting to "unknown" tokens
+- Perfectly reversible (no information loss during preprocessing)
 
 The selected algorithm is BPE (byte pair encoding) from [SentencePiece](https://github.com/google/sentencepiece).
 This implementation operates on characters, but is able to encode out-of-vocabulary symbols with bytes.
@@ -43,10 +43,10 @@ The vocabulary size is 32K tokens, as a reasonable tradeoff between context comp
 
 ## Dataset
 [wikimedia/wikipedia, 20231101.en](https://huggingface.co/datasets/wikimedia/wikipedia), split into:
- - train: 90%
- - val: 5%
- - test: 2.5%
- - predict: 2.5%
+- train: 90%
+- val: 5%
+- test: 2.5%
+- predict: 2.5%
 
 Articles (texts) are chunked into sequences with 50% overlap.
 
@@ -130,10 +130,10 @@ The actual training takes about 10 hours per epoch on an A100 GPU.
 For hardware with less memory, you may need to modify the configuration and decrease the context size and/or batch size.
 
 By default, the following are saved during training:
- - the tokenizer, in the `tokenizers` directory
- - the configuration and hyperparameters, in YAML format under `logs/version_*`
- - learning curves, in TensorBoard format under `logs/version_*`
- - model checkpoints, in `logs/version_*/checkpoints`
+- the tokenizer, in the `tokenizers` directory
+- the configuration and hyperparameters, in YAML format under `logs/version_*`
+- learning curves, in TensorBoard format under `logs/version_*`
+- model checkpoints, in `logs/version_*/checkpoints`
 
 You can view the learning curves by running:
 ```shell
@@ -184,10 +184,10 @@ First, delete the old tokenizer, and then run:
 
 ### Configuration
 Configuration and hyperparameters are read from multiple sources in the following order:
- - defaults in the code
- - `conf/defaults.yaml`, implicitly
- - YAML files, given with the `-c PATH` option
- - command line options
+- defaults in the code
+- `conf/defaults.yaml`, implicitly
+- YAML files, given with the `-c PATH` option
+- command line options
 
 See `conf/xlab.yaml` for the configuration used to train the current release model.
 Examples of additional options are in `conf/extra`.
@@ -210,15 +210,14 @@ All of these can be reproduced with the included inference script, using random 
 
 
 ## Future work
- - use a BPE tokenizer, e.g. from tiktoken or sentencepiece
- - batch together sequences of similar lengths, or concatenate short sequences via separator tokens
- - add learning rate scheduling (e.g. cosine with warmup, or reduce lr on plateau)
- - rotary positional embeddings or ALiBi
- - RMSNorm
- - SwiGLU activation
- - increase the maximum context length
- - train a larger model on a larger and more diverse dataset
- - fine-tune for a downstream task
- - quantization
- - compile the model during training, and for inference
- - cache KV pairs in inference, try multi-query/grouped-query attention
+- use a BPE tokenizer, e.g. from tiktoken or sentencepiece
+- batch together sequences of similar lengths, or concatenate short sequences via separator tokens
+- add learning rate scheduling (e.g. cosine with warmup, or reduce lr on plateau)
+- rotary positional embeddings or ALiBi
+- RMSNorm
+- SwiGLU activation
+- train a larger model on a larger and more diverse dataset
+- fine-tune for a downstream task
+- quantization
+- compile the model during training, and for inference
+- cache KV pairs in inference, try multi-query/grouped-query attention

@@ -1,28 +1,28 @@
 # Changelog
 
 ## [Unreleased]
- - Use FlashAttention
- - Use SentencePiece BPE tokenizer
- - Increased context length
- - Added gradient checkpointing
- - Added dataset and vocabulary statistics
- - Training speed and memory usage optimizations
- - Download pre-trained tokenizer
- - Optional encoding on the fly
- - Support continued prompts in inference (not start of sequence)
- - Compute dataset and vocabulary statistics
- - Data validation
+- Use FlashAttention
+- Use SentencePiece BPE tokenizer
+- Increased context length
+- Added gradient checkpointing
+- Added dataset and vocabulary statistics
+- Training speed and memory usage optimizations
+- Download pre-trained tokenizer
+- Optional encoding on the fly
+- Support continued prompts in inference (not start of sequence)
+- Compute dataset and vocabulary statistics
+- Data validation
 
 ## [0.1.2] - 2025-04-10
- - Documentation improvements
+- Documentation improvements
 
 ## [0.1.1] - 2025-04-10
- - Added documentation
- - Distribute a PyPI package
- - Inference fixes
+- Added documentation
+- Distribute a PyPI package
+- Inference fixes
 
 ## [0.1.0] - 2025-04-09
- - Initial release
+- Initial release
 
 [Unreleased]: https://github.com/vsemionov/xlab/compare/v0.1.2...main
 [0.1.2]: https://github.com/vsemionov/xlab/compare/v0.1.1...v0.1.2
