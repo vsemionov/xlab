@@ -159,7 +159,7 @@ class TransformerMixin:
             if create:
                 mask = self.causal_mask[:seq_len, :seq_len]
                 mask = mask.unsqueeze(0) if unsqueeze else mask
-        mask = mask.unsqueeze(1) if unsqueeze else mask
+        mask = mask.unsqueeze(1) if unsqueeze and mask is not None else mask
         return mask, is_causal
 
     def reset_parameters(self: nn.Module):
