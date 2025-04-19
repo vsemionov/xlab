@@ -2,6 +2,7 @@ import unittest
 import sys
 
 import numpy as np
+import torch
 
 from ..datasets import SequenceDataset
 
@@ -56,16 +57,16 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 3)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 4, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 4, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 4, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 4, 2])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 2])).all())
 
     def test_unconcatenated_unpadded_trainedeos(self):
         dataset = SequenceDataset(
@@ -78,16 +79,16 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 3)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 4, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 4, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 4, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 4, 2])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 2])).all())
 
     def test_unconcatenated_padded_untrainedeos(self):
         dataset = SequenceDataset(
@@ -100,28 +101,28 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 6)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 3, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([3, 2, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 3, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([3, 2, 0])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 4, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 4, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 4, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 4, 2])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([4, 2, 0])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([2, 0, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([4, 2, 0])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([2, 0, 0])).all())
 
         x, y = dataset[3]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
         x, y = dataset[4]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 2])).all())
 
         x, y = dataset[5]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 2, 0])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([2, 0, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 2, 0])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([2, 0, 0])).all())
 
     def test_unconcatenated_padded_trainedeos(self):
         dataset = SequenceDataset(
@@ -134,32 +135,32 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 7)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 3, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([3, 2, 1])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 3, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([3, 2, 1])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 0])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([1, 0, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 0])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([1, 0, 0])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 4, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 4, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 4, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 4, 2])).all())
 
         x, y = dataset[3]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([4, 2, 1])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([2, 1, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([4, 2, 1])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([2, 1, 0])).all())
 
         x, y = dataset[4]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
         x, y = dataset[5]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 2])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 2])).all())
 
         x, y = dataset[6]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 2, 1])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([2, 1, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 2, 1])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([2, 1, 0])).all())
 
     def test_concatenated_unpadded_untrainedeos(self):
         dataset = SequenceDataset(
@@ -172,24 +173,24 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 5)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 3, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([3, 2, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 3, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([3, 2, 0])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([0, 4, 4])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([0, 4, 4])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([4, 4, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 2, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([4, 4, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 2, 0])).all())
 
         x, y = dataset[3]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([0, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([0, 5, 5])).all())
 
         x, y = dataset[4]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
     def test_concatenated_unpadded_trainedeos(self):
         dataset = SequenceDataset(
@@ -202,24 +203,24 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 5)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 3, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([3, 2, 1])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 3, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([3, 2, 1])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([1, 4, 4])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([1, 4, 4])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([4, 4, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 2, 1])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([4, 4, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 2, 1])).all())
 
         x, y = dataset[3]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([1, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([1, 5, 5])).all())
 
         x, y = dataset[4]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
     def test_concatenated_padded_untrainedeos(self):
         dataset = SequenceDataset(
@@ -232,28 +233,28 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 6)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 3, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([3, 2, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 3, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([3, 2, 0])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([0, 4, 4])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([0, 4, 4])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([4, 4, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 2, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([4, 4, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 2, 0])).all())
 
         x, y = dataset[3]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([0, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([0, 5, 5])).all())
 
         x, y = dataset[4]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
         x, y = dataset[5]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 2, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 2, 0])).all())
 
     def test_concatenated_padded_trainedeos(self):
         dataset = SequenceDataset(
@@ -266,29 +267,29 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(len(dataset), 7)
 
         x, y = dataset[0]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([1, 3, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([3, 2, 1])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([1, 3, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([3, 2, 1])).all())
 
         x, y = dataset[1]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 4])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([1, 4, 4])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 4])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([1, 4, 4])).all())
 
         x, y = dataset[2]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([4, 4, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([4, 2, 1])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([4, 4, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([4, 2, 1])).all())
 
         x, y = dataset[3]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([1, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([1, 5, 5])).all())
 
         x, y = dataset[4]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 5])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 5, 5])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 5])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 5, 5])).all())
 
         x, y = dataset[5]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([5, 5, 2])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([5, 2, 1])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([5, 5, 2])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([5, 2, 1])).all())
 
         x, y = dataset[6]
-        print(x, file=sys.stderr); self.assertTrue((x == np.array([2, 1, 0])).all())
-        print(y, file=sys.stderr); self.assertTrue((y == np.array([1, 0, 0])).all())
+        print(x, file=sys.stderr); self.assertTrue((x == torch.tensor([2, 1, 0])).all())
+        print(y, file=sys.stderr); self.assertTrue((y == torch.tensor([1, 0, 0])).all())
