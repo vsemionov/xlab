@@ -301,6 +301,86 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [2, 1, 0])
         self.assertEqual(y.tolist(), [1, 0, 0])
 
+    def test_mask_zero_sos(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([1, 3, 0, 4, 5, 6])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0],
+            [1, 1, 1, 0, 0, 0],
+            [1, 1, 1, 1, 0, 0],
+            [1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 1, 1, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)
+
+    def test_mask_one_sos(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([3, 2, 1, 4, 5, 6])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0],
+            [0, 0, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 1, 1, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)
+
+    def test_mask_one_sos_left(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([1, 2, 3, 4, 5, 6])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0],
+            [1, 1, 1, 0, 0, 0],
+            [1, 1, 1, 1, 0, 0],
+            [1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 1, 1, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)
+
+    def test_mask_one_sos_right(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([0, 2, 3, 4, 5, 1])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0],
+            [1, 1, 1, 0, 0, 0],
+            [1, 1, 1, 1, 0, 0],
+            [1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)
+
     def test_mask_two_sos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
@@ -315,6 +395,66 @@ class TestSequenceDataset(unittest.TestCase):
             [1, 0, 0, 0, 0, 0],
             [0, 1, 0, 0, 0, 0],
             [0, 1, 1, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 0],
+            [0, 0, 0, 1, 1, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)
+
+    def test_mask_two_sos_left(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([1, 1, 2, 0, 5, 5])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+            [0, 1, 1, 0, 0, 0],
+            [0, 1, 1, 1, 0, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)
+
+    def test_mask_two_sos_right(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([2, 3, 2, 3, 1, 1])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0],
+            [1, 1, 1, 0, 0, 0],
+            [1, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)
+
+    def test_mask_two_sos_middle(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([2, 3, 1, 1, 2, 3])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0],
             [0, 0, 0, 1, 0, 0],
             [0, 0, 0, 1, 1, 0],
             [0, 0, 0, 1, 1, 1],
