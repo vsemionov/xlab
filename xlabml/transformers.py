@@ -153,13 +153,13 @@ class TransformerMixin:
     def get_mask(self, seq_len, mask, create=False, invert=False, unsqueeze=False):
         is_causal = False
         if mask is not None:
-            mask = mask.logical_not() if invert else mask
+            mask = mask.logical_not() if invert else mask  # bnn
         elif self.causal_mask is None:
             is_causal = True
             if create:
-                mask = self.causal_mask[:seq_len, :seq_len]
-                mask = mask.unsqueeze(0) if unsqueeze else mask
-        mask = mask.unsqueeze(1) if unsqueeze and mask is not None else mask
+                mask = self.causal_mask[:seq_len, :seq_len]  # nn
+                mask = mask.unsqueeze(0) if unsqueeze else mask  # 1nn (bnn)
+        mask = mask.unsqueeze(1) if unsqueeze and mask is not None else mask  # b1nn (bhnn)
         return mask, is_causal
 
     def reset_parameters(self: nn.Module):
