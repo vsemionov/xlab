@@ -37,7 +37,7 @@ class XLabTrainer(Trainer):
         """Validate training data"""
         text_dataset = datamodule.create_datasets_and_tokenizer(['train'], level='text')['train']
         print(f'Writing results to: {output_path}')
-        texts = progress_bar(text_dataset, kind=datamodule.progress, total=len(text_dataset), desc='Validating')
+        texts = progress_bar(text_dataset, kind=datamodule.progress, desc='Validating')
         with open(output_path, 'w', newline='') as csvfile:
             fieldnames = ['index', *(['text_b64'] if dump else [])]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

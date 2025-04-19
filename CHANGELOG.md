@@ -4,6 +4,7 @@
 - Use FlashAttention
 - Use SentencePiece BPE tokenizer
 - Increased context length
+- Concatenate texts to fill training sequences
 - Added gradient checkpointing
 - Training speed and memory usage optimizations
 - Support combining multiple hub datasets

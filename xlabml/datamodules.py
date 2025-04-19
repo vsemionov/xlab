@@ -40,6 +40,8 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
             dynamic_encode: bool = False,
+            concatenate: bool = False, pad_incomplete: bool = True,
+            train_sos: bool = False,
             num_proc: int = 4,
             progress: str = 'tqdm',
             seq_len: int = 128,
@@ -56,6 +58,9 @@ class XLabDataModule(L.LightningDataModule):
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
         self.dynamic_encode = dynamic_encode
+        self.concatenate = concatenate
+        self.pad_incomplete = pad_incomplete
+        self.train_sos = train_sos
         self.num_proc = num_proc
         self.progress = progress
         self.seq_len = seq_len
@@ -128,6 +133,8 @@ class XLabDataModule(L.LightningDataModule):
             split: SequenceDataset(
                 parent=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
+                concatenate=self.concatenate, pad_incomplete=self.pad_incomplete,
+                train_sos=self.train_sos,
                 num_proc=self.num_proc,
             )
             for split, token_dataset in token_datasets.items()

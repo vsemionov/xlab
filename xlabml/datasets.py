@@ -52,7 +52,9 @@ class BaseDataset(data.Dataset):
         return self.dataset[idx][self.column]
 
     def __iter__(self):
-        return (item for batch in self.dataset.iter(1000) for item in batch[self.column])
+        for batch in self.dataset.iter(1000):
+            for item in batch[self.column]:
+                yield item
 
 
 class TextDataset(BaseDataset):
@@ -131,55 +133,82 @@ class SequenceDataset(BaseDataset):
             self,
             parent: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
+            concatenate: bool = False, pad_incomplete: bool = True,
+            train_sos: bool = False,
             num_proc: int = 4,
     ):
         step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < step_size <= seq_len
+        if not concatenate and not pad_incomplete:
+            warnings.warn(
+                'Sequence concatenation and padding are both disabled. The model will see very few <eos> tokens.'
+            )
         column = 'indices'
-        dataset = self._index(parent, column, step_size, num_proc)
+        tokenizer = parent.tokenizer
+        sos_index = tokenizer[tokenizer.sos_token]
+        eos_index = tokenizer[tokenizer.eos_token]
+        pad_index = tokenizer[tokenizer.pad_token]
+        dataset = self._generate(parent, column, seq_len, step_size, concatenate, pad_incomplete, train_sos, num_proc,
+            sos_index, eos_index, pad_index)
         super().__init__(column=column, parent=parent, dataset=dataset)
-        self.seq_len = seq_len
+        self.concatenate = concatenate
+        self.train_sos = train_sos
+        self.sos_index = sos_index
+        self.pad_index = pad_index
 
     @staticmethod
-    def _index(parent, column, step_size, num_proc):
-        def index(batch, ds_idxs):
-            return {
-                column: [
-                    (parent_idx, start_idx)
-                    for parent_idx, indices in zip(ds_idxs, batch[parent.column])
-                    for start_idx in range(0, len(indices) + 1, step_size)  # +1 accounts for <sos>
-                ]
-            }
+    def _generate(parent, column, seq_len, step_size, concatenate, pad_incomplete, train_sos, num_proc,
+            sos_index, eos_index, pad_index):
+        def generate():
+            sos = np.array([sos_index])
+            eos = np.array([eos_index])
+            padding = np.array([pad_index]).repeat(seq_len)
+            sos_pad = np.array([sos_index]).repeat(train_sos)
+            min_buflen = 1 - train_sos  # TODO: name
 
-        return parent.dataset.map(
-            index,
-            with_indices=True,
-            batched=True,
-            remove_columns=parent.dataset.column_names,
-            num_proc=num_proc,
-            desc='Indexing',
-        ).with_format()
+            reader = iter(parent)
+            buffer = np.array([], dtype=int)
+            window = seq_len + 1
 
-    def __getitem__(self, idx):
-        parent = self.parent
-        tokenizer = parent.tokenizer
-        window = self.seq_len + 1
-        parent_idx, start_idx = self.dataset[idx][self.column]
-        end_idx = start_idx + window
-        indices = parent[parent_idx]
-        if start_idx > 0:
-            start_idx -= 1
-            end_idx -= 1
-        else:
-            sos_index = tokenizer[tokenizer.sos_token]
-            indices = np.concatenate([[sos_index], indices[:window - 1]])
-        if len(indices) < end_idx:
-            eos_index = tokenizer[tokenizer.eos_token]
-            pad_index = tokenizer[tokenizer.pad_token]
-            padding_size = end_idx - len(indices)
-            padding = np.array([pad_index]).repeat(padding_size)
-            indices = np.concatenate([indices, [eos_index], padding])
-        indices = indices[start_idx:end_idx]
+            while True:
+                if len(buffer) < window:
+                    if concatenate:
+                        try:
+                            buffer = np.concatenate([buffer, sos, next(reader), eos])
+                            continue
+                        except StopIteration:
+                            pass
+
+                    if pad_incomplete and len(buffer) > min_buflen and buffer[min_buflen] != pad_index:
+                        buffer = np.concatenate([buffer, sos_pad, padding[:window - len(buffer) - len(sos_pad)]])
+                        sos_pad = sos_pad[:0]  # TODO: simplify
+                        min_buflen = 1  # TODO: simplify
+                    else:
+                        try:
+                            buffer = np.concatenate([sos, next(reader), eos])
+                            continue
+                        except StopIteration:
+                            break
+
+                yield {column: buffer[:window]}
+                buffer = buffer[step_size:]
+
+        dataset = hf_datasets.Dataset.from_generator(generate, num_proc=num_proc, split=parent.parent.split)
+        return dataset.with_format('numpy')
+
+    def _get_xy(self, indices):
         indices = torch.from_numpy(indices)
         x, y = indices[:-1], indices[1:]
+        if self.concatenate and not self.train_sos:
+            y = torch.where(y == self.sos_index, self.pad_index, y)
         return x, y
+
+    def __getitem__(self, idx):
+        indices = self.dataset[idx][self.column]
+        return self._get_xy(indices)
+
+
+    def __iter__(self):
+        for batch in self.dataset.iter(1000):
+            for indices in batch[self.column]:
+                yield self._get_xy(indices)
