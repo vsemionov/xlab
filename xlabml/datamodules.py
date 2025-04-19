@@ -32,7 +32,7 @@ class XLabDataModule(L.LightningDataModule):
 
     def __init__(
             self,
-            locations: Union[HubLocation, list[HubLocation]] = \
+            locations: Union[HubLocation, dict, list[Union[HubLocation, dict]]] = \
                     dict(path='wikipedia', name='20220301.simple', trust_remote_code=True, column='text'),  # noqa
             splits: dict[str, float] = {'train': 0.1, 'val': 0.05, 'test': 0.05, 'predict': 0.05},  # noqa
             num_tokens: int = 10_000,

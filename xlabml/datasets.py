@@ -60,12 +60,13 @@ class BaseDataset(data.Dataset):
 class TextDataset(BaseDataset):
     def __init__(
             self,
-            locations: Union[HubLocation, list[HubLocation]],
+            locations: Union[HubLocation, dict, list[Union[HubLocation, dict]]],
             splits: dict[str, float], split: str,
             quiet: bool = False,
     ):
-        if isinstance(locations, HubLocation):
+        if isinstance(locations, (HubLocation, dict)):
             locations = [locations]
+        locations = [HubLocation(**location) if isinstance(location, dict) else location for location in locations]
         column = 'text'
         datasets = [hf_datasets.load_dataset(**location.to_load_kwargs()) for location in locations]
         datasets = [d.select_columns(l.column) if l.prune else d for l, d in zip(locations, datasets)]
