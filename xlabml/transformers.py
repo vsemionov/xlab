@@ -70,6 +70,7 @@ class FeedForward(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
+    create_mask = True
     invert_mask = True
 
     def __init__(self, d_model, n_heads, dropout=0.1):
@@ -114,10 +115,10 @@ class CheckpointMultiHeadSelfAttention(MultiHeadSelfAttention):
 
 
 class FlashMultiHeadSelfAttention(MultiHeadSelfAttention):
+    create_mask = False  # flash attention is faster with implicit causal masks
     invert_mask = False
 
     def sdpa(self, q, k, v, mask=None, is_causal=False):
-        mask = None if is_causal else mask  # flash attention is faster with implicit causal masks
         dropout_p = self.dropout.p if self.training else 0
         return F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=dropout_p, is_causal=is_causal)
 
@@ -135,10 +136,6 @@ class TransformerLayer(nn.Module):
         self.dropout2 = nn.Dropout(dropout * block_drop)
         self.norm2 = norm(d_model)
 
-    @property
-    def invert_mask(self):
-        return self.mhsa.invert_mask
-
     def forward(self, x, mask=None, is_causal=False):
         if self.prenorm:
             x = x + self.dropout1(self.mhsa(self.norm1(x), mask=mask, is_causal=is_causal))
@@ -151,60 +148,56 @@ class TransformerLayer(nn.Module):
         return x
 
 
-class ParameterInit:
+class TransformerMixin:
+    causal_mask: torch.Tensor
+
+    def get_mask(self, seq_len, mask, create=False, invert=False, unsqueeze=False):
+        is_causal = False
+        if mask is not None:
+            mask = mask.logical_not() if invert else mask
+        elif self.causal_mask is None:
+            is_causal = True
+            if create:
+                mask = self.causal_mask[:seq_len, :seq_len]
+                mask = mask.unsqueeze(0) if unsqueeze else mask
+        return mask, is_causal
+
     def reset_parameters(self: nn.Module):
         for p in self.parameters():
             if p.dim() > 1:
                 init.xavier_uniform_(p)
 
 
-class TransformerDecoder(nn.Module, ParameterInit):
+class TransformerDecoder(nn.Module, TransformerMixin):
     def __init__(self, max_len, d_model, n_layers, n_heads, d_ff, postnorm=False, norm=nn.LayerNorm,
             causal=False, **kwargs):
         super().__init__()
         self.layers = nn.ModuleList([TransformerLayer(d_model, n_heads, d_ff, norm=norm, **kwargs)
             for _ in range(n_layers)])
         self.norm = norm(d_model) if postnorm else None
-        self.merge_op = torch.logical_or if self.invert_mask else torch.logical_and
+        mhsa = self.layers[0].mhsa
+        self.create_mask = mhsa.create_mask
+        self.invert_mask = mhsa.invert_mask
         causal_mask = self._create_causal_mask(max_len) if causal else None
         self.register_buffer('causal_mask', causal_mask, persistent=False)
         self.reset_parameters()
 
-    @property
-    def invert_mask(self):
-        return self.layers[0].invert_mask
-
     def _create_causal_mask(self, max_len):
         ones = torch.ones(max_len, max_len, dtype=torch.bool)
-        return ones.triu(diagonal=1) if self.invert_mask else ones.tril(diagonal=0)
+        return ones.triu(diagonal=1) if self.invert_mask else ones.tril()
 
-    def forward(self, x, seq_mask=None):
-        mask, is_causal = self._merge_masks(self.causal_mask, seq_mask, x.size(1))  # bnn
+    def forward(self, x, mask=None):
+        mask, is_causal = self.get_mask(
+            x.size(1), mask, create=self.create_mask, invert=self.invert_mask, unsqueeze=True
+        )
         for layer in self.layers:
             x = layer(x, mask=mask, is_causal=is_causal)
         if self.norm is not None:
             x = self.norm(x)
         return x
 
-    def _merge_masks(self, causal_mask, seq_mask, seq_len):
-        # causal_mask: NN
-        # seq_mask: bn
-        if causal_mask is None and seq_mask is None:
-            return None, False
-        if causal_mask is not None:
-            causal_mask = causal_mask[:seq_len, :seq_len].unsqueeze(0)  # 1nn
-            if seq_mask is None:
-                return causal_mask, True
-        if seq_mask is not None:
-            seq_mask = seq_mask.unsqueeze(1)  # b1n
-            if causal_mask is None:
-                return seq_mask, False
-        return self.merge_op(causal_mask, seq_mask), False
 
-
-class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
-    invert_mask = True
-
+class PyTorchTransformerDecoder(nn.TransformerEncoder, TransformerMixin):
     def __init__(self, max_len, d_model, n_layers, n_heads, d_ff, prenorm=False, postnorm=False, norm=nn.LayerNorm,
             causal=False, dropout=0.1, **kwargs):
         kwargs = dict(dropout=dropout, norm_first=prenorm, batch_first=True, **kwargs)
@@ -215,10 +208,9 @@ class PyTorchTransformerDecoder(nn.TransformerEncoder, ParameterInit):
         self.register_buffer('causal_mask', causal_mask)
         self.reset_parameters()
 
-    def forward(self, x, seq_mask=None):  # noqa
-        n = x.size(1)
-        mask = self.causal_mask[:n, :n] if self.causal_mask is not None else None
-        return super().forward(x, mask=mask, src_key_padding_mask=seq_mask, is_causal=(mask is not None))
+    def forward(self, x, mask=None):  # noqa
+        mask, is_causal = self.get_mask(x.size(1), mask, create=True, invert=True)
+        return super().forward(x, mask=mask, is_causal=is_causal)
 
 
 class Transformer(nn.Module):
@@ -229,29 +221,22 @@ class Transformer(nn.Module):
         self.dropout = nn.Dropout(dropout * pos_drop)
         self.decoder = decoder(max_len, d_model, n_layers, n_heads, d_ff, dropout=dropout, **kwargs)
 
-    @property
-    def invert_mask(self):
-        return self.decoder.invert_mask
-
-    def forward(self, x, seq_mask=None):
+    def forward(self, x, mask=None):
         x = x + self.position(x.size(-2)).unsqueeze(0)
         x = self.dropout(x)
-        x = self.decoder(x, seq_mask=seq_mask)
+        x = self.decoder(x, mask=mask)
         return x
 
 
 class GenerativeTextTransformer(nn.Module):
-    def __init__(self, n_vocab, max_len, d_model, pad_index=None, pad_mask=True, **kwargs):
+    def __init__(self, n_vocab, max_len, d_model, pad_index=None, **kwargs):
         super().__init__()
-        self.pad_index = pad_index if pad_mask else None
         self.embedding = nn.Embedding(n_vocab, d_model, padding_idx=pad_index)
         self.transformer = Transformer(max_len=max_len, d_model=d_model, causal=True, **kwargs)
-        self.pad_cmp = torch.eq if self.transformer.invert_mask else torch.ne
         self.head = nn.Linear(d_model, n_vocab)
 
-    def forward(self, x):
-        pad_mask = self.pad_cmp(x, self.pad_index) if self.pad_index is not None else None
+    def forward(self, x, mask=None):
         x = self.embedding(x) * math.sqrt(self.embedding.embedding_dim)
-        x = self.transformer(x, seq_mask=pad_mask)
+        x = self.transformer(x, mask=mask)
         y = self.head(x)
         return y

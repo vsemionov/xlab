@@ -46,8 +46,8 @@ class XLabModule(L.LightningModule):
         if self.debug:
             self.example_input_array = torch.zeros((1, max_len), dtype=torch.long)
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, x, mask=None):
+        return self.model(x, mask=mask)
 
     def loss(self, logits, targets):
         ignore_index = self.pad_index if self.pad_index is not None else -1
@@ -68,8 +68,9 @@ class XLabModule(L.LightningModule):
         return correct.sum() / correct.numel()
 
     def _step(self, batch, name, sync_dist=False):
-        x, targets = batch
-        logits = self(x)
+        x, targets = batch[:2]
+        mask = batch[2] if len(batch) > 2 else None
+        logits = self(x, mask=mask)
         loss = self.loss(logits, targets)
         accuracy = self._accuracy(logits.detach(), targets)
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
