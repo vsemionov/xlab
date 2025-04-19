@@ -37,9 +37,7 @@ class XLabModule(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.model = transformers.GenerativeTextTransformer(
-            n_vocab, max_len, d_model,
-            pad_index=pad_index, pad_mask=False,
-            **kwargs
+            n_vocab, max_len, d_model, pad_index=pad_index, **kwargs
         ) if not dummy else nn.Linear(2, 2)
         self.pad_index = pad_index
         self.debug = debug
