@@ -74,17 +74,21 @@ class TestSequenceDataset(unittest.TestCase):
             train_sos=True,
         )
 
-        self.assertEqual(len(dataset), 3)
+        self.assertEqual(len(dataset), 4)
 
-        x, y = dataset[0]
+        x, y = dataset[0]  # due to opportunistic sos
+        self.assertEqual(x.tolist(), [1, 3, 2])
+        self.assertEqual(y.tolist(), [3, 2, 1])
+
+        x, y = dataset[1]
         self.assertEqual(x.tolist(), [1, 4, 4])
         self.assertEqual(y.tolist(), [4, 4, 2])
 
-        x, y = dataset[1]
+        x, y = dataset[2]
         self.assertEqual(x.tolist(), [1, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
 
-        x, y = dataset[2]
+        x, y = dataset[3]
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 2])
 
@@ -198,7 +202,7 @@ class TestSequenceDataset(unittest.TestCase):
             train_sos=True,
         )
 
-        self.assertEqual(len(dataset), 5)
+        self.assertEqual(len(dataset), 6)
 
         x, y = dataset[0]
         self.assertEqual(x.tolist(), [1, 3, 2])
@@ -219,6 +223,10 @@ class TestSequenceDataset(unittest.TestCase):
         x, y = dataset[4]
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
+
+        x, y = dataset[5]  # due to opportunistic sos
+        self.assertEqual(x.tolist(), [5, 5, 2])
+        self.assertEqual(y.tolist(), [5, 2, 1])
 
     def test_concatenated_padded_untrainedsos(self):
         dataset = SequenceDataset(

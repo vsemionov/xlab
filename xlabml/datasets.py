@@ -182,7 +182,9 @@ class SequenceDataset(BaseDataset):
                             pass
 
                     buf_thresh = 1 - add_sos  # require trainable tokens in buffer (1 if training sos, 2 otherwise)
-                    if pad_incomplete and len(buffer) > buf_thresh and buffer[buf_thresh] != pad_index:
+                    # can add sos if pad=true or exactly token left
+                    if (pad_incomplete or len(buffer) == window - add_sos) \
+                            and len(buffer) > buf_thresh and buffer[buf_thresh] != pad_index:
                         buffer = np.concatenate([buffer, sos_pad[:add_sos], padding[:window - len(buffer) - add_sos]])
                         add_sos = False  # disable until next read
                     else:
@@ -202,7 +204,7 @@ class SequenceDataset(BaseDataset):
     def _get_xy(self, indices):
         indices = torch.from_numpy(indices)
         x, y = indices[:-1], indices[1:]
-        if self.concatenate and not self.train_sos:
+        if self.concatenate and not self.train_sos:  # unwanted target sos may be present only if concatenate is enabled
             y = torch.where(y == self.sos_index, self.pad_index, y)
         return x, y
 
