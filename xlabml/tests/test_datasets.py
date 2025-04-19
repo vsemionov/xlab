@@ -47,7 +47,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_unconcatenated_unpadded_untrainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=False,
             train_sos=False,
@@ -69,7 +69,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_unconcatenated_unpadded_trainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=False,
             train_sos=True,
@@ -95,7 +95,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_unconcatenated_padded_untrainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=True,
             train_sos=False,
@@ -129,7 +129,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_unconcatenated_padded_trainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=True,
             train_sos=True,
@@ -167,7 +167,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_concatenated_unpadded_untrainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=False,
             train_sos=False,
@@ -197,7 +197,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_concatenated_unpadded_trainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=False,
             train_sos=True,
@@ -231,7 +231,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_concatenated_padded_untrainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=False,
@@ -265,7 +265,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_concatenated_padded_trainedsos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -303,7 +303,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_zero_sos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -323,7 +323,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_one_sos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -343,7 +343,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_one_sos_left(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -363,7 +363,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_one_sos_right(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -383,7 +383,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_two_sos(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -403,7 +403,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_two_sos_left(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -423,7 +423,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_two_sos_right(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
@@ -443,7 +443,7 @@ class TestSequenceDataset(unittest.TestCase):
 
     def test_mask_two_sos_middle(self):
         dataset = SequenceDataset(
-            parent=self.token_dataset,
+              parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
             train_sos=True,
