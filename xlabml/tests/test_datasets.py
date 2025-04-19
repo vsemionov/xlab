@@ -44,7 +44,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.sample_data = [np.array(indices) for indices in self.sample_data]
         self.token_dataset = MockTokenDataset(self.sample_data)
 
-    def test_unconcatenated_unpadded_untrainedeos(self):
+    def test_unconcatenated_unpadded_untrainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
@@ -66,7 +66,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 2])
 
-    def test_unconcatenated_unpadded_trainedeos(self):
+    def test_unconcatenated_unpadded_trainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
@@ -88,7 +88,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 2])
 
-    def test_unconcatenated_padded_untrainedeos(self):
+    def test_unconcatenated_padded_untrainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
@@ -122,7 +122,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 2, 0])
         self.assertEqual(y.tolist(), [2, 0, 0])
 
-    def test_unconcatenated_padded_trainedeos(self):
+    def test_unconcatenated_padded_trainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
@@ -160,7 +160,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 2, 1])
         self.assertEqual(y.tolist(), [2, 1, 0])
 
-    def test_concatenated_unpadded_untrainedeos(self):
+    def test_concatenated_unpadded_untrainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
@@ -190,7 +190,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
 
-    def test_concatenated_unpadded_trainedeos(self):
+    def test_concatenated_unpadded_trainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
@@ -220,7 +220,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
 
-    def test_concatenated_padded_untrainedeos(self):
+    def test_concatenated_padded_untrainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
@@ -254,7 +254,7 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 5, 2])
         self.assertEqual(y.tolist(), [5, 2, 0])
 
-    def test_concatenated_padded_trainedeos(self):
+    def test_concatenated_padded_trainedsos(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,
             seq_len=3, step_size=2,
