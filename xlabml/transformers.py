@@ -84,7 +84,6 @@ class MultiHeadSelfAttention(nn.Module):
     def sdpa(self, q, k, v, mask=None, is_causal=False):
         a = q @ k.transpose(2, 3) / math.sqrt(q.size(-1))  # bhnn
         if mask is not None:
-            mask = mask.unsqueeze(1)  # b1nn
             a = a.masked_fill_(mask, float('-inf'))
         a = a.softmax(dim=3)  # bhnn
         a = self.dropout(a)
@@ -160,6 +159,7 @@ class TransformerMixin:
             if create:
                 mask = self.causal_mask[:seq_len, :seq_len]
                 mask = mask.unsqueeze(0) if unsqueeze else mask
+        mask = mask.unsqueeze(1) if unsqueeze else mask
         return mask, is_causal
 
     def reset_parameters(self: nn.Module):
