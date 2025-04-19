@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+import torch
 
 from ..datasets import SequenceDataset
 
@@ -174,23 +175,23 @@ class TestSequenceDataset(unittest.TestCase):
 
         self.assertEqual(len(dataset), 5)
 
-        x, y = dataset[0]
+        x, y, mask = dataset[0]
         self.assertEqual(x.tolist(), [1, 3, 2])
         self.assertEqual(y.tolist(), [3, 2, 0])
 
-        x, y = dataset[1]
+        x, y, mask = dataset[1]
         self.assertEqual(x.tolist(), [2, 1, 4])
         self.assertEqual(y.tolist(), [0, 4, 4])
 
-        x, y = dataset[2]
+        x, y, mask = dataset[2]
         self.assertEqual(x.tolist(), [4, 4, 2])
         self.assertEqual(y.tolist(), [4, 2, 0])
 
-        x, y = dataset[3]
+        x, y, mask = dataset[3]
         self.assertEqual(x.tolist(), [2, 1, 5])
         self.assertEqual(y.tolist(), [0, 5, 5])
 
-        x, y = dataset[4]
+        x, y, mask = dataset[4]
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
 
@@ -204,27 +205,27 @@ class TestSequenceDataset(unittest.TestCase):
 
         self.assertEqual(len(dataset), 6)
 
-        x, y = dataset[0]
+        x, y, mask = dataset[0]
         self.assertEqual(x.tolist(), [1, 3, 2])
         self.assertEqual(y.tolist(), [3, 2, 1])
 
-        x, y = dataset[1]
+        x, y, mask = dataset[1]
         self.assertEqual(x.tolist(), [2, 1, 4])
         self.assertEqual(y.tolist(), [1, 4, 4])
 
-        x, y = dataset[2]
+        x, y, mask = dataset[2]
         self.assertEqual(x.tolist(), [4, 4, 2])
         self.assertEqual(y.tolist(), [4, 2, 1])
 
-        x, y = dataset[3]
+        x, y, mask = dataset[3]
         self.assertEqual(x.tolist(), [2, 1, 5])
         self.assertEqual(y.tolist(), [1, 5, 5])
 
-        x, y = dataset[4]
+        x, y, mask = dataset[4]
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
 
-        x, y = dataset[5]  # due to opportunistic sos
+        x, y, mask = dataset[5]  # due to opportunistic sos
         self.assertEqual(x.tolist(), [5, 5, 2])
         self.assertEqual(y.tolist(), [5, 2, 1])
 
@@ -238,27 +239,27 @@ class TestSequenceDataset(unittest.TestCase):
 
         self.assertEqual(len(dataset), 6)
 
-        x, y = dataset[0]
+        x, y, mask = dataset[0]
         self.assertEqual(x.tolist(), [1, 3, 2])
         self.assertEqual(y.tolist(), [3, 2, 0])
 
-        x, y = dataset[1]
+        x, y, mask = dataset[1]
         self.assertEqual(x.tolist(), [2, 1, 4])
         self.assertEqual(y.tolist(), [0, 4, 4])
 
-        x, y = dataset[2]
+        x, y, mask = dataset[2]
         self.assertEqual(x.tolist(), [4, 4, 2])
         self.assertEqual(y.tolist(), [4, 2, 0])
 
-        x, y = dataset[3]
+        x, y, mask = dataset[3]
         self.assertEqual(x.tolist(), [2, 1, 5])
         self.assertEqual(y.tolist(), [0, 5, 5])
 
-        x, y = dataset[4]
+        x, y, mask = dataset[4]
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
 
-        x, y = dataset[5]
+        x, y, mask = dataset[5]
         self.assertEqual(x.tolist(), [5, 5, 2])
         self.assertEqual(y.tolist(), [5, 2, 0])
 
@@ -272,30 +273,50 @@ class TestSequenceDataset(unittest.TestCase):
 
         self.assertEqual(len(dataset), 7)
 
-        x, y = dataset[0]
+        x, y, mask = dataset[0]
         self.assertEqual(x.tolist(), [1, 3, 2])
         self.assertEqual(y.tolist(), [3, 2, 1])
 
-        x, y = dataset[1]
+        x, y, mask = dataset[1]
         self.assertEqual(x.tolist(), [2, 1, 4])
         self.assertEqual(y.tolist(), [1, 4, 4])
 
-        x, y = dataset[2]
+        x, y, mask = dataset[2]
         self.assertEqual(x.tolist(), [4, 4, 2])
         self.assertEqual(y.tolist(), [4, 2, 1])
 
-        x, y = dataset[3]
+        x, y, mask = dataset[3]
         self.assertEqual(x.tolist(), [2, 1, 5])
         self.assertEqual(y.tolist(), [1, 5, 5])
 
-        x, y = dataset[4]
+        x, y, mask = dataset[4]
         self.assertEqual(x.tolist(), [5, 5, 5])
         self.assertEqual(y.tolist(), [5, 5, 5])
 
-        x, y = dataset[5]
+        x, y, mask = dataset[5]
         self.assertEqual(x.tolist(), [5, 5, 2])
         self.assertEqual(y.tolist(), [5, 2, 1])
 
-        x, y = dataset[6]
+        x, y, mask = dataset[6]
         self.assertEqual(x.tolist(), [2, 1, 0])
         self.assertEqual(y.tolist(), [1, 0, 0])
+
+    def test_mask_two_sos(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,
+            seq_len=3, step_size=2,
+            concatenate=True, pad_incomplete=True,
+            train_sos=True,
+        )
+
+        x = torch.tensor([2, 1, 2, 1, 5, 5])
+        mask = dataset._compute_mask(x)
+        expected = [
+            [1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+            [0, 1, 1, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 0],
+            [0, 0, 0, 1, 1, 1],
+        ]
+        self.assertEqual(mask.tolist(), expected)

@@ -154,6 +154,7 @@ class SequenceDataset(BaseDataset):
         self.concatenate = concatenate
         self.train_sos = train_sos
         self.sos_index = sos_index
+        self.eos_index = eos_index
         self.pad_index = pad_index
 
     @staticmethod
@@ -201,19 +202,30 @@ class SequenceDataset(BaseDataset):
         dataset = hf_datasets.Dataset.from_generator(generate, num_proc=num_proc, split=parent.parent.split)
         return dataset.with_format('numpy')
 
-    def _get_xy(self, indices):
+    def _compute_mask(self, x: torch.Tensor):
+        sos_indices = (x == self.sos_index).nonzero().unsqueeze(1)
+        if sos_indices.size(0) == 0:
+            return torch.ones((x.size(0),) * 2, dtype=torch.bool).tril()
+        lengths = sos_indices[1:] - sos_indices[:1]
+        init = sos_indices[:1]
+        remainder = x.size(0) - sos_indices[-1:]
+        lengths = torch.cat([init, lengths, remainder])
+        blocks = [torch.ones(l, l, dtype=torch.bool).tril() for l in lengths if l]
+        return torch.block_diag(*blocks)
+
+    def _get_xym(self, indices):
         indices = torch.from_numpy(indices)
         x, y = indices[:-1], indices[1:]
         if self.concatenate and not self.train_sos:  # unwanted target sos may be present only if concatenate is enabled
             y = torch.where(y == self.sos_index, self.pad_index, y)
-        return x, y
+        return (x, y, self._compute_mask(x)) if self.concatenate else (x, y)
 
     def __getitem__(self, idx):
         indices = self.dataset[idx][self.column]
-        return self._get_xy(indices)
+        return self._get_xym(indices)
 
 
     def __iter__(self):
         for batch in self.dataset.iter(1000):
             for indices in batch[self.column]:
-                yield self._get_xy(indices)
+                yield self._get_xym(indices)
