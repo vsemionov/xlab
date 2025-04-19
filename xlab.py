@@ -82,7 +82,8 @@ class XLabTrainer(Trainer):
             f' ± {stats["dataset"]["text_length_std"]:,.1f} characters,'
             f' {stats["dataset"]["token_length_mean"]:,.1f}'
             f' ({stats["dataset"]["token_length_median"]:,.1f})'
-            f' ± {stats["dataset"]["token_length_std"]:,.1f} tokens'
+            f' ± {stats["dataset"]["token_length_std"]:,.1f} tokens, '
+            f' {len(dataset):,} sequences'
         )
         print(
             f'Mean token length in split: '
