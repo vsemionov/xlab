@@ -129,6 +129,8 @@ class TokenDataset(BaseDataset):
 
 
 class SequenceDataset(BaseDataset):
+    parent: TokenDataset
+
     def __init__(
             self,
             parent: TokenDataset,

@@ -24,7 +24,7 @@ from xlabml.tokenizer import Tokenizer
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModel
 from xlabml import inference
-from xlabml import utils
+from xlabml import text
 
 
 @click.command()
@@ -94,7 +94,7 @@ def main(
             indices.append(eos_index)
         output = tokenizer.decode(indices)
         sep = ' ' if rev_prompt else ''
-        escaped = utils.escape(f'{rev_prompt}{sep}{output}')
+        escaped = text.escape(f'{rev_prompt}{sep}{output}')
         print(escaped)
 
 

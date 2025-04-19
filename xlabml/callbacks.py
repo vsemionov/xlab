@@ -17,7 +17,7 @@
 from lightning.pytorch.callbacks import TQDMProgressBar, RichProgressBar, RichModelSummary
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 
-from .config import THEME_COLOR
+from . import THEME_COLOR
 
 
 __all__ = ['XLabTQDMProgressBar', 'XLabRichProgressBar', 'XLabRichModelSummary']
