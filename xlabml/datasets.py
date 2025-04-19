@@ -205,7 +205,7 @@ class SequenceDataset(BaseDataset):
         return dataset.with_format('numpy')
 
     def _compute_mask(self, x: torch.Tensor):
-        sos_indices = (x == self.sos_index).nonzero().unsqueeze(1)
+        sos_indices = (x == self.sos_index).nonzero().squeeze(1)
         if sos_indices.size(0) == 0:
             return torch.ones((x.size(0),) * 2, dtype=torch.bool).tril()
         lengths = sos_indices[1:] - sos_indices[:1]
