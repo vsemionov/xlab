@@ -50,8 +50,8 @@ data:
     num_threads: 4
     max_sentence_length: 1073741824
   dynamic_encode: false
-  concatenate: true
-  pad_incomplete: false
+  concatenate: false
+  pad_incomplete: true
   train_sos: false
   num_proc: 4
   progress: tqdm
