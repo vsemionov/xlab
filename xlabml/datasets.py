@@ -208,7 +208,7 @@ class SequenceDataset(BaseDataset):
         sos_indices = (x == self.sos_index).nonzero().squeeze(1)
         if sos_indices.size(0) == 0:
             return torch.ones((x.size(0),) * 2, dtype=torch.bool).tril()
-        lengths = sos_indices[1:] - sos_indices[:1]
+        lengths = sos_indices[1:] - sos_indices[:-1]
         init = sos_indices[:1]
         remainder = x.size(0) - sos_indices[-1:]
         lengths = torch.cat([init, lengths, remainder])
