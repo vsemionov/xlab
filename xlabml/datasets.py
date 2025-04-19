@@ -159,16 +159,18 @@ class SequenceDataset(BaseDataset):
     @staticmethod
     def _generate(parent, column, seq_len, step_size, concatenate, pad_incomplete, train_sos, num_proc,
             sos_index, eos_index, pad_index):
+        # When train_sos is true and padding is enabled, sos will be added after eos, before regular padding,
+        # thus training the model to start a new sequence after finishing a previous one.
         def generate():
             sos = np.array([sos_index])
             eos = np.array([eos_index])
             padding = np.array([pad_index]).repeat(seq_len)
-            sos_pad = np.array([sos_index]).repeat(train_sos)
-            min_buflen = 1 - train_sos  # TODO: name
+            sos_pad = np.array([sos_index])
 
             reader = iter(parent)
             buffer = np.array([], dtype=int)
             window = seq_len + 1
+            add_sos = train_sos
 
             while True:
                 if len(buffer) < window:
@@ -179,13 +181,14 @@ class SequenceDataset(BaseDataset):
                         except StopIteration:
                             pass
 
-                    if pad_incomplete and len(buffer) > min_buflen and buffer[min_buflen] != pad_index:
-                        buffer = np.concatenate([buffer, sos_pad, padding[:window - len(buffer) - len(sos_pad)]])
-                        sos_pad = sos_pad[:0]  # TODO: simplify
-                        min_buflen = 1  # TODO: simplify
+                    buf_thresh = 1 - add_sos  # require trainable tokens in buffer (1 if training sos, 2 otherwise)
+                    if pad_incomplete and len(buffer) > buf_thresh and buffer[buf_thresh] != pad_index:
+                        buffer = np.concatenate([buffer, sos_pad[:add_sos], padding[:window - len(buffer) - add_sos]])
+                        add_sos = False  # disable until next read
                     else:
                         try:
                             buffer = np.concatenate([sos, next(reader), eos])
+                            add_sos = train_sos  # reset
                             continue
                         except StopIteration:
                             break
