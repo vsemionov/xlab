@@ -142,13 +142,14 @@ class SequenceDataset(BaseDataset):
             self,
             parent: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
+            pad_incomplete: bool = True,
             num_proc: int = 4,
     ):
         step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < step_size <= seq_len
         tokenizer = parent.tokenizer
         column = 'index'
-        dataset = self._index(parent, column, step_size, num_proc)
+        dataset = self._index(parent, column, seq_len, step_size, pad_incomplete, num_proc)
         super().__init__(column=column, parent=parent, dataset=dataset)
         self.seq_len = seq_len
         self.sos = np.array([tokenizer[tokenizer.sos_token]])
@@ -156,13 +157,14 @@ class SequenceDataset(BaseDataset):
         self.padding = np.array([tokenizer[tokenizer.pad_token]]).repeat(seq_len)
 
     @staticmethod
-    def _index(parent, column, step_size, num_proc):
+    def _index(parent, column, seq_len, step_size, pad_incomplete, num_proc):
         def index(batch, idxs):
+            delta = (pad_incomplete - 1) * (seq_len - 1) + 1  # +1 and -1 account for <sos> and <eos>, respectively
             return {
                 column: [
                     (parent_idx, start_idx)
                     for parent_idx, indices in zip(idxs, batch[parent.column])
-                    for start_idx in range(0, len(indices) + 1, step_size)  # +1 accounts for <sos>
+                    for start_idx in range(0, len(indices) + delta, step_size)
                 ]
             }
 

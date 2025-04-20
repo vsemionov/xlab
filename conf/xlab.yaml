@@ -50,6 +50,7 @@ data:
     num_threads: 4
     max_sentence_length: 1073741824
   dynamic_encode: false
+  pad_incomplete: true
   num_proc: 4
   progress: tqdm
   step_size: 1.0

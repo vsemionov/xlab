@@ -68,6 +68,27 @@ class TestSequenceDataset(unittest.TestCase):
         self.assertEqual(x.tolist(), [5, 2, 0])
         self.assertEqual(y.tolist(), [2, 0, 0])
 
+    def test_unpadded(self):
+        dataset = SequenceDataset(
+            parent=self.token_dataset,  # noqa
+            seq_len=3, step_size=2,
+            pad_incomplete=False,
+        )
+
+        self.assertEqual(len(dataset), 3)
+
+        x, y = dataset[0]
+        self.assertEqual(x.tolist(), [1, 4, 4])
+        self.assertEqual(y.tolist(), [4, 4, 2])
+
+        x, y = dataset[1]
+        self.assertEqual(x.tolist(), [1, 5, 5])
+        self.assertEqual(y.tolist(), [5, 5, 5])
+
+        x, y = dataset[2]
+        self.assertEqual(x.tolist(), [5, 5, 5])
+        self.assertEqual(y.tolist(), [5, 5, 2])
+
     def test_batch_get(self):
         dataset = SequenceDataset(
             parent=self.token_dataset,  # noqa
