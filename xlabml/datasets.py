@@ -152,11 +152,9 @@ class SequenceDataset(BaseDataset):
         dataset = self._index(parent, column, seq_len, step_size, pad_incomplete, num_proc)
         super().__init__(column=column, parent=parent, dataset=dataset)
         self.seq_len = seq_len
-        self.pad_incomplete = pad_incomplete
         self.sos = np.array([tokenizer[tokenizer.sos_token]])
         self.eos = np.array([tokenizer[tokenizer.eos_token]])
         self.padding = np.array([tokenizer[tokenizer.pad_token]]).repeat(seq_len)
-        self.causal_mask = torch.ones(seq_len, seq_len, dtype=torch.bool).tril()
 
     @staticmethod
     def _index(parent, column, seq_len, step_size, pad_incomplete, num_proc):
@@ -179,7 +177,7 @@ class SequenceDataset(BaseDataset):
             desc='Indexing',
         ).with_format()
 
-    def _get_xym(self, indices, start_idx):
+    def _get_xy(self, indices, start_idx):
         if start_idx > 0:
             indices = indices[start_idx - 1:start_idx + self.seq_len]
         else:
@@ -188,15 +186,9 @@ class SequenceDataset(BaseDataset):
         if remainder > 0:
             indices = np.concatenate([indices, self.eos, self.padding[:remainder - 1]])
         indices = torch.from_numpy(indices)
-        x, y = indices[:-1], indices[1:]
-        if self.pad_incomplete:
-            length = self.seq_len - max(remainder - 1, 0)
-            mask = self.causal_mask & self.causal_mask[length - 1].unsqueeze(1)
-            return x, y, mask
-        else:
-            return x, y
+        return indices[:-1], indices[1:]
 
     def transform(self, index):
         parent_idx, start_idx = index
         indices = self.parent[parent_idx]
-        return self._get_xym(indices, start_idx)
+        return self._get_xy(indices, start_idx)
