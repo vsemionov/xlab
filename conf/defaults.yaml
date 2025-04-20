@@ -21,9 +21,3 @@ trainer:
   max_epochs: 20
   enable_model_summary: false  # prevents a warning that the callback is already configured
   deterministic: true
-
-optimizer:
-  class_path: AdamW
-  init_args:
-    lr: 3e-4
-    weight_decay: 0.1
