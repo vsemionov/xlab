@@ -143,9 +143,9 @@ class SequenceDataset(BaseDataset):
         super().__init__(column=column, parent=parent, dataset=dataset)
         self.seq_len = seq_len
         tokenizer = parent.tokenizer
-        self.sos_index = tokenizer[tokenizer.sos_token]
-        self.eos_index = tokenizer[tokenizer.eos_token]
-        self.pad_index = tokenizer[tokenizer.pad_token]
+        self.sos = np.array([tokenizer[tokenizer.sos_token]])
+        self.eos = np.array([tokenizer[tokenizer.eos_token]])
+        self.padding = np.array([tokenizer[tokenizer.pad_token]]).repeat(seq_len)
 
     @staticmethod
     def _index(parent, column, step_size, num_proc):
@@ -176,15 +176,13 @@ class SequenceDataset(BaseDataset):
             start_idx -= 1
             end_idx -= 1
         else:
-            indices = np.concatenate([[self.sos_index], indices[:window - 1]])
+            indices = np.concatenate([self.sos, indices[:window - 1]])
         if len(indices) < end_idx:
             padding_size = end_idx - len(indices)
-            padding = np.array([self.pad_index]).repeat(padding_size)
-            indices = np.concatenate([indices, [self.eos_index], padding])
+            indices = np.concatenate([indices, self.eos, self.padding[:padding_size]])
         indices = indices[start_idx:end_idx]
         indices = torch.from_numpy(indices)
-        x, y = indices[:-1], indices[1:]
-        return x, y
+        return indices[:-1], indices[1:]
 
     def __iter__(self):
         for idx in range(len(self)):
