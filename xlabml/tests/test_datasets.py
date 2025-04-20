@@ -115,8 +115,8 @@ class TestSequenceDataset(unittest.TestCase):
         iter_xys = list(dataset)
         self.assertEqual(len(iter_xys), len(xys))
 
-        for batch_xy, xy in zip(iter_xys, xys):
+        for iter_xy, xy in zip(iter_xys, xys):
             x, y = xy
-            batch_x, batch_y = batch_xy
-            self.assertEqual(x.tolist(), batch_x.tolist())
-            self.assertEqual(y.tolist(), batch_y.tolist())
+            iter_x, iter_y = iter_xy
+            self.assertEqual(x.tolist(), iter_x.tolist())
+            self.assertEqual(y.tolist(), iter_y.tolist())
