@@ -38,7 +38,7 @@ class XLabModule(L.LightningModule):
         self.save_hyperparameters()
         self.model = transformers.GenerativeTextTransformer(
             n_vocab, max_len, d_model, pad_index=pad_index, **kwargs
-        ) if not dummy else nn.Linear(2, 2)
+        ) if not dummy else DummyModel(n_vocab)
         self.pad_index = pad_index
         self.debug = debug
         if self.debug:
@@ -147,3 +147,13 @@ class XLabPyTorchModel(XLabModule):
             activation=activation,
             debug=debug, dummy=dummy,
         )
+
+
+class DummyModel(nn.Module):
+    def __init__(self, n_vocab):
+        super().__init__()
+        self.n_vocab = n_vocab
+        self.value = nn.Parameter(torch.zeros(1))
+
+    def forward(self, x, mask=None):
+        return self.value.view(1, 1, 1).expand(x.size(0), x.size(1), self.n_vocab)
