@@ -53,7 +53,7 @@ class XLabModule(L.LightningModule):
 
     def configure_optimizers(self):
         # optimizers and lr schedulers are defined in configuration, this is only a default
-        return optim.AdamW(self.parameters(), lr=3e-4, weight_decay=0.1)
+        return optim.AdamW(self.parameters(), lr=3e-4)
 
     def _accuracy(self, logits: torch.Tensor, targets: torch.Tensor):
         indices = logits.argmax(dim=2)
