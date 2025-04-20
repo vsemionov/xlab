@@ -54,7 +54,7 @@ def dataset_stats(dataset: SequenceDataset, sample_size: int):
         'token_length_mean': np.mean(token_lengths),
         'token_length_median': np.median(token_lengths),
         'token_length_std': np.std(token_lengths),
-        'seq_fill_ratio_mean': np.mean([(seq != pad_index).sum() for seq in seq_sample]) / len(dataset[0][0]),
+        'seq_fill_ratio_mean': np.mean([(seq != pad_index).sum() for seq in seq_sample]) / dataset.seq_len,
     }
 
 
