@@ -170,17 +170,13 @@ class SequenceDataset(BaseDataset):
     def __getitem__(self, idx):
         parent_idx, start_idx = self.dataset[idx][self.column]
         indices = self.parent[parent_idx]
-        window = self.seq_len + 1
-        end_idx = start_idx + window
         if start_idx > 0:
-            start_idx -= 1
-            end_idx -= 1
+            indices = indices[start_idx - 1:start_idx + self.seq_len]
         else:
-            indices = np.concatenate([self.sos, indices[:window - 1]])
-        if len(indices) < end_idx:
-            padding_size = end_idx - len(indices)
-            indices = np.concatenate([indices, self.eos, self.padding[:padding_size]])
-        indices = indices[start_idx:end_idx]
+            indices = np.concatenate([self.sos, indices[:self.seq_len]])
+        remainder = self.seq_len - len(indices) + 1
+        if remainder > 0:
+            indices = np.concatenate([indices, self.eos, self.padding[:remainder - 1]])
         indices = torch.from_numpy(indices)
         return indices[:-1], indices[1:]
 
