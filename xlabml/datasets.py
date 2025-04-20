@@ -138,11 +138,11 @@ class SequenceDataset(BaseDataset):
     ):
         step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < step_size <= seq_len
+        tokenizer = parent.tokenizer
         column = 'index'
         dataset = self._index(parent, column, step_size, num_proc)
         super().__init__(column=column, parent=parent, dataset=dataset)
         self.seq_len = seq_len
-        tokenizer = parent.tokenizer
         self.sos = np.array([tokenizer[tokenizer.sos_token]])
         self.eos = np.array([tokenizer[tokenizer.eos_token]])
         self.padding = np.array([tokenizer[tokenizer.pad_token]]).repeat(seq_len)
@@ -167,9 +167,7 @@ class SequenceDataset(BaseDataset):
             desc='Indexing',
         ).with_format()
 
-    def __getitem__(self, idx):
-        parent_idx, start_idx = self.dataset[idx][self.column]
-        indices = self.parent[parent_idx]
+    def _get_xy(self, indices, start_idx):
         if start_idx > 0:
             indices = indices[start_idx - 1:start_idx + self.seq_len]
         else:
@@ -180,6 +178,20 @@ class SequenceDataset(BaseDataset):
         indices = torch.from_numpy(indices)
         return indices[:-1], indices[1:]
 
+    def __getitem__(self, idx):
+        index = self.dataset[idx][self.column]
+        if type(index[0]) is int:
+            parent_idx, start_idx = index
+            indices = self.parent[parent_idx]
+            return self._get_xy(indices, start_idx)
+        else:
+            parent_idxs, start_idxs = list(zip(*index))
+            arrays = self.parent[parent_idxs]
+            return [self._get_xy(indices, start_idx) for indices, start_idx in zip(arrays, start_idxs)]
+
     def __iter__(self):
-        for idx in range(len(self)):
-            yield self[idx]
+        for batch in self.dataset.iter(1000):
+            for index in batch[self.column]:
+                parent_idx, start_idx = index
+                indices = self.parent[parent_idx]
+                yield self._get_xy(indices, start_idx)
