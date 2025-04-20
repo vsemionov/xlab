@@ -75,15 +75,16 @@ class XLabTrainer(Trainer):
         print(
             f'Size: {len(dataset.parent):,} texts,'
             f' {stats["dataset"]["text_size_est"]:,} characters (est.),'
-            f' {stats["dataset"]["token_size_est"]:,} tokens (est.)')
+            f' {stats["dataset"]["token_size_est"]:,} tokens (est.),'
+            f' {len(dataset):,} sequences'
+        )
         print(
             f'Text length: {stats["dataset"]["text_length_mean"]:,.1f}'
             f' ({stats["dataset"]["text_length_median"]:,.1f})'
             f' ± {stats["dataset"]["text_length_std"]:,.1f} characters,'
             f' {stats["dataset"]["token_length_mean"]:,.1f}'
             f' ({stats["dataset"]["token_length_median"]:,.1f})'
-            f' ± {stats["dataset"]["token_length_std"]:,.1f} tokens, '
-            f' {len(dataset):,} sequences'
+            f' ± {stats["dataset"]["token_length_std"]:,.1f} tokens'
         )
         print(
             f'Mean token length in split: '
