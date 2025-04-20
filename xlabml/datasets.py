@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections.abc import Iterable
 from dataclasses import dataclass, asdict
 from typing import Optional, Union
 import warnings
@@ -45,16 +46,23 @@ class BaseDataset(data.Dataset):
         self.parent = parent
         self.dataset = dataset
 
+    def transform(self, item):
+        return item
+
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        return self.dataset[idx][self.column]
+        data = self.dataset[idx][self.column]
+        if isinstance(idx, Iterable):
+            return [self.transform(item) for item in data]
+        else:
+            return self.transform(data)
 
     def __iter__(self):
         for batch in self.dataset.iter(1000):
             for item in batch[self.column]:
-                yield item
+                yield self.transform(item)
 
 
 class TextDataset(BaseDataset):
@@ -178,20 +186,7 @@ class SequenceDataset(BaseDataset):
         indices = torch.from_numpy(indices)
         return indices[:-1], indices[1:]
 
-    def __getitem__(self, idx):
-        index = self.dataset[idx][self.column]
-        if type(index[0]) is int:
-            parent_idx, start_idx = index
-            indices = self.parent[parent_idx]
-            return self._get_xy(indices, start_idx)
-        else:
-            parent_idxs, start_idxs = list(zip(*index))
-            arrays = self.parent[parent_idxs]
-            return [self._get_xy(indices, start_idx) for indices, start_idx in zip(arrays, start_idxs)]
-
-    def __iter__(self):
-        for batch in self.dataset.iter(1000):
-            for index in batch[self.column]:
-                parent_idx, start_idx = index
-                indices = self.parent[parent_idx]
-                yield self._get_xy(indices, start_idx)
+    def transform(self, index):
+        parent_idx, start_idx = index
+        indices = self.parent[parent_idx]
+        return self._get_xy(indices, start_idx)
