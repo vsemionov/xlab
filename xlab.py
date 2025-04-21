@@ -21,6 +21,7 @@ from typing import Any
 import multiprocessing
 
 import torch
+import torch.optim.lr_scheduler as lr_scheduler
 from lightning.pytorch.trainer import Trainer
 from lightning.pytorch.cli import LightningCLI
 
@@ -93,6 +94,22 @@ class XLabTrainer(Trainer):
         print(f'Mean sequence fill ratio: {stats["dataset"]["seq_fill_ratio_mean"]:.2f}')
 
 
+class XLabLRScheduler(lr_scheduler.LRScheduler):
+    def __init__(self, *args, config: dict, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.config = config
+
+# Dynamically create subclasses of lr_scheduler.LRScheduler,  accepting Lightning's additional configuration,
+# and add them to the module namespace, so that they can be used in the configuration file.
+# This is a workaround for Lightning CLI's incomplete support for LR scheduler configuration.
+for var in vars(lr_scheduler).values():
+    if type(var) is type and issubclass(var, lr_scheduler.LRScheduler) and var is not lr_scheduler.LRScheduler:
+        name = f'XLab{var.__name__}'
+        cls = type(name, (XLabLRScheduler, var), {})
+        vars()[name] = cls
+        del cls, name
+
+
 class XLabCLI(LightningCLI):
     data_subcommands = {'compute_stats'}
 
@@ -113,6 +130,19 @@ class XLabCLI(LightningCLI):
         parser.link_arguments('data.num_tokens', 'model.n_vocab')
         parser.link_arguments('data.tokenizer_trainer', 'model.pad_index',
             lambda tokenizer_trainer: tokenizer_trainer.get_pad_index(), apply_on='instantiate')
+
+    @staticmethod
+    def configure_optimizers(lightning_module, optimizer, lr_scheduler=None):
+        if isinstance(lr_scheduler, XLabLRScheduler):
+            return {
+                'optimizer': optimizer,
+                'lr_scheduler': {
+                    'scheduler': lr_scheduler,
+                    **lr_scheduler.config,
+                },
+            }
+        else:
+            return super().configure_optimizers(lightning_module, optimizer, lr_scheduler)
 
 
 def main():
