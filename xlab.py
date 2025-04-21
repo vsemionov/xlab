@@ -150,7 +150,7 @@ def main():
     multiprocessing.set_start_method('fork')  # needed on macos
     delattr(XLabModule, 'configure_optimizers')  # prevents a warning that method will be overridden by configuration
 
-    parser_kwargs = {
+    parser_kwargs: dict = {
         subcommand: {
             'default_config_files': [
                 CONF_DIR / 'defaults.yaml',
@@ -159,6 +159,7 @@ def main():
         }
         for subcommand in XLabCLI.subcommands()
     }
+    parser_kwargs['parser_mode'] = 'omegaconf'
 
     XLabCLI(XLabModel, XLabDataModule, parser_kwargs=parser_kwargs)
 

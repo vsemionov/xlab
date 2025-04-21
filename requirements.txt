@@ -5,6 +5,7 @@ flit
 jsonargparse[signatures]
 lightning
 numpy
+omegaconf
 requests
 rich
 sentencepiece

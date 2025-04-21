@@ -1,10 +1,16 @@
 lr_scheduler:
-  class_path: ReduceLROnPlateau
+  class_path: XLabOneCycleLR
   init_args:
-    monitor: val_loss
-    mode: min
-    threshold: 1e-4
-    threshold_mode: rel
-    factor: 0.1
-    patience: 2
-    min_lr: 1e-5
+    max_lr: ${optimizer.init_args.lr}
+    total_steps: 100_000
+    pct_start: 0.3
+    anneal_strategy: cos
+    cycle_momentum: true
+    base_momentum: 0.85
+    max_momentum: 0.95
+    div_factor: 25
+    final_div_factor: 1e4
+    three_phase: false
+    config:
+      interval: step
+      frequency: 1
