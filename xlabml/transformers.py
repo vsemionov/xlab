@@ -154,7 +154,7 @@ class TransformerMixin:
         is_causal = False
         if mask is not None:
             mask = mask.logical_not() if invert else mask  # bnn
-        elif self.causal_mask is None:
+        elif self.causal_mask is not None:
             is_causal = True
             if create:
                 mask = self.causal_mask[:seq_len, :seq_len]  # nn
