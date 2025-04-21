@@ -131,8 +131,7 @@ class XLabCLI(LightningCLI):
         parser.link_arguments('data.tokenizer_trainer', 'model.pad_index',
             lambda tokenizer_trainer: tokenizer_trainer.get_pad_index(), apply_on='instantiate')
 
-    @staticmethod
-    def configure_optimizers(lightning_module, optimizer, lr_scheduler=None):
+    def configure_optimizers(self, lightning_module, optimizer, lr_scheduler=None):
         if isinstance(lr_scheduler, XLabLRScheduler):
             return {
                 'optimizer': optimizer,
