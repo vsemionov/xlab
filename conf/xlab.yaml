@@ -53,6 +53,7 @@ data:
   dataset_class: xlabml.datasets.IndexedSequenceDataset
   concatenate: false
   pad_incomplete: true
+  train_sos: false
   num_proc: 4
   progress: tqdm
   step_size: 1.0

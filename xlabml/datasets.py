@@ -139,11 +139,21 @@ class TokenDataset(BaseDataset):
 
 class SequenceDataset(BaseDataset):
     parent: TokenDataset
-    seq_len: int
 
     def __init__(self, column: str, parent: TokenDataset, dataset: hf_datasets.Dataset, seq_len: int):
         super().__init__(column, parent, dataset)
         self.seq_len = seq_len
+
+    @classmethod
+    def create(
+            cls,
+            parent: TokenDataset,
+            seq_len: int, step_size: Union[float, int] = 0.5,
+            concatenate: bool = False, pad_incomplete: bool = True,
+            train_sos: bool = False,
+            num_proc: int = 4,
+    ):
+        raise NotImplemented
 
 
 class IndexedSequenceDataset(SequenceDataset):
@@ -152,9 +162,11 @@ class IndexedSequenceDataset(SequenceDataset):
             parent: TokenDataset,
             seq_len: int, step_size: Union[float, int] = 0.5,
             concatenate: bool = False, pad_incomplete: bool = True,
+            train_sos: bool = False,
             num_proc: int = 4,
     ):
         assert concatenate is False, f'{self.__class__.__name__} does not support concatenation'
+        assert train_sos is False, f'{self.__class__.__name__} does not support training <sos>'
         step_size = int(step_size * seq_len) if isinstance(step_size, float) else step_size
         assert 0 < step_size <= seq_len
         tokenizer = parent.tokenizer
@@ -164,6 +176,23 @@ class IndexedSequenceDataset(SequenceDataset):
         self.sos = np.array([tokenizer[tokenizer.sos_token]])
         self.eos = np.array([tokenizer[tokenizer.eos_token]])
         self.padding = np.array([tokenizer[tokenizer.pad_token]]).repeat(seq_len)
+
+    @classmethod
+    def create(
+            cls,
+            parent: TokenDataset,
+            seq_len: int, step_size: Union[float, int] = 0.5,
+            concatenate: bool = False, pad_incomplete: bool = True,
+            train_sos: bool = False,
+            num_proc: int = 4,
+    ):
+        return cls(
+            parent=parent,
+            seq_len=seq_len, step_size=step_size,
+            concatenate=concatenate, pad_incomplete=pad_incomplete,
+            train_sos=train_sos,
+            num_proc=num_proc,
+        )
 
     @staticmethod
     def _index(parent, column, seq_len, step_size, pad_incomplete, num_proc):
@@ -231,6 +260,23 @@ class MaterializedSequenceDataset(SequenceDataset):
         self.sos_index = sos_index
         self.eos_index = eos_index
         self.pad_index = pad_index
+
+    @classmethod
+    def create(
+            cls,
+            parent: TokenDataset,
+            seq_len: int, step_size: Union[float, int] = 0.5,
+            concatenate: bool = False, pad_incomplete: bool = True,
+            train_sos: bool = False,
+            num_proc: int = 4,
+    ):
+        return cls(
+            parent=parent,
+            seq_len=seq_len, step_size=step_size,
+            concatenate=concatenate, pad_incomplete=pad_incomplete,
+            train_sos=train_sos,
+            num_proc=num_proc,
+        )
 
     @staticmethod
     def _generate(parent, column, seq_len, step_size, concatenate, pad_incomplete, train_sos, num_proc,
