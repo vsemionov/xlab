@@ -23,6 +23,7 @@ import torch.utils.data as data
 import datasets as hf_datasets
 
 from .tokenizer import Tokenizer
+from .utils import progress_bar
 
 
 @dataclass
@@ -291,7 +292,8 @@ class MaterializedSequenceDataset(SequenceDataset):
             padding = np.array([pad_index]).repeat(seq_len)
             sos_pad = np.array([sos_index])
 
-            reader = iter(parent)
+            reader = progress_bar(parent, kind='tqdm', total=len(parent), desc='Reading', position=1, leave=False)
+            reader = iter(reader)
             buffer = np.array([], dtype=int)
             window = seq_len + 1
             add_sos = train_sos

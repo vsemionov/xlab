@@ -22,11 +22,11 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-def progress_bar(iterable: Iterable, kind: str = 'tqdm', total: Optional[float] = None, desc: str = 'Working'):
+def progress_bar(iterable: Iterable, kind: str = 'tqdm', total: Optional[float] = None, desc: str = 'Working', **kwargs):
     if kind == 'tqdm':
-        return tqdm(iterable, total=total, desc=desc)
+        return tqdm(iterable, total=total, desc=desc, **kwargs)
     elif kind == 'rich':
-        return track(iterable, total=total, description=desc)
+        return track(iterable, total=total, description=desc, **kwargs)
     else:
         assert False
 
