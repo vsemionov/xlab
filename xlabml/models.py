@@ -56,7 +56,7 @@ class XLabModule(L.LightningModule):
         return optim.Adam(self.parameters(), lr=3e-4)
 
     def _accuracy(self, logits: torch.Tensor, targets: torch.Tensor):
-        indices = logits.argmax(dim=2)
+        indices = logits.detach().argmax(dim=-1)
         if self.pad_index is not None:
             mask = targets != self.pad_index
             indices = indices[mask]
@@ -71,7 +71,7 @@ class XLabModule(L.LightningModule):
         mask = batch[2] if len(batch) > 2 else None
         logits = self(x, mask=mask)
         loss = self.loss(logits, targets)
-        accuracy, num_targets = self._accuracy(logits.detach(), targets)
+        accuracy, num_targets = self._accuracy(logits, targets)
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
         # set batch_size explicitly to weigh down padded target sequences
         self.log_dict(log_data, batch_size=num_targets, prog_bar=True, sync_dist=sync_dist)
