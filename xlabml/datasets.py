@@ -172,7 +172,7 @@ class IndexedSequenceDataset(SequenceDataset):
         tokenizer = parent.tokenizer
         column = 'index'
         dataset = self._index(parent, column, seq_len, step_size, pad_incomplete, num_proc)
-        super().__init__(column=column, parent=parent, dataset=dataset, seq_len=seq_len)
+        super(SequenceDataset, self).__init__(column=column, parent=parent, dataset=dataset, seq_len=seq_len)  # super^2
         self.sos = np.array([tokenizer[tokenizer.sos_token]])
         self.eos = np.array([tokenizer[tokenizer.eos_token]])
         self.padding = np.array([tokenizer[tokenizer.pad_token]]).repeat(seq_len)
@@ -254,7 +254,7 @@ class MaterializedSequenceDataset(SequenceDataset):
         pad_index = tokenizer[tokenizer.pad_token]
         dataset = self._generate(parent, column, seq_len, step_size, concatenate, pad_incomplete, train_sos, num_proc,
             sos_index, eos_index, pad_index)
-        super().__init__(column=column, parent=parent, dataset=dataset, seq_len=seq_len)
+        super(SequenceDataset, self).__init__(column=column, parent=parent, dataset=dataset, seq_len=seq_len)  # super^2
         self.concatenate = concatenate
         self.train_sos = train_sos
         self.sos_index = sos_index
