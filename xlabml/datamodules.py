@@ -136,7 +136,8 @@ class XLabDataModule(L.LightningDataModule):
             split: self.dataset_class.create(
                 parent=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
-                concatenate=self.concatenate, pad_incomplete=self.pad_incomplete,
+                concatenate=(self.concatenate if split == 'train' else False),
+                pad_incomplete=(self.pad_incomplete if split == 'train' else True),
                 train_sos=self.train_sos,
                 num_proc=self.num_proc,
             )
