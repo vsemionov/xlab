@@ -73,8 +73,10 @@ class XLabModule(L.LightningModule):
         loss = self.loss(logits, targets)
         accuracy, num_targets = self._accuracy(logits, targets)
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
-        # set batch_size explicitly to weigh down padded target sequences
+        # set batch_size explicitly to weigh down batches with padded targets
         self.log_dict(log_data, batch_size=num_targets, prog_bar=True, sync_dist=sync_dist)
+        # scale down the loss to reduce the learning rate for batches with padded targets
+        loss = loss * (targets.numel() / num_targets)
         return loss
 
     def training_step(self, batch, batch_idx):
