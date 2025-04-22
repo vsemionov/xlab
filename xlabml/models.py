@@ -61,22 +61,19 @@ class XLabModule(L.LightningModule):
             mask = targets != self.pad_index
             indices = indices[mask]
             targets = targets[mask]
-        num_targets = targets.numel()
         correct = indices == targets
         # ignore division by zero, i.e. targets must contain non-padding elements
-        return correct.sum() / num_targets, num_targets
+        return correct.sum() / correct.numel()
 
     def _step(self, batch, name, sync_dist=False):
         x, targets = batch[:2]
         mask = batch[2] if len(batch) > 2 else None
         logits = self(x, mask=mask)
         loss = self.loss(logits, targets)
-        accuracy, num_targets = self._accuracy(logits, targets)
+        accuracy = self._accuracy(logits, targets)
         log_data = {f'{name}_loss': loss, f'{name}_accuracy': accuracy}
-        # set batch_size explicitly to weigh down batches with padded targets
-        self.log_dict(log_data, batch_size=num_targets, prog_bar=True, sync_dist=sync_dist)
-        # scale down the loss to reduce the learning rate for batches with padded targets
-        return loss * (targets.numel() / num_targets)
+        self.log_dict(log_data, prog_bar=True, sync_dist=sync_dist)
+        return loss
 
     def training_step(self, batch, batch_idx):
         return self._step(batch, 'train')
