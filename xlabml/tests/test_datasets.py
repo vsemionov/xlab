@@ -40,7 +40,7 @@ class TestIndexedSequenceDataset(unittest.TestCase):
         self.token_dataset = MockTokenDataset(self.sample_data)
 
     def test_basic(self):
-        dataset = IndexedSequenceDataset(
+        dataset = IndexedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
         )
@@ -72,7 +72,7 @@ class TestIndexedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [2, 0, 0])
 
     def test_unpadded(self):
-        dataset = IndexedSequenceDataset(
+        dataset = IndexedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             pad_incomplete=False,
@@ -93,7 +93,7 @@ class TestIndexedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [5, 5, 2])
 
     def test_batch_get(self):
-        dataset = IndexedSequenceDataset(
+        dataset = IndexedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
         )
@@ -109,7 +109,7 @@ class TestIndexedSequenceDataset(unittest.TestCase):
             self.assertEqual(y.tolist(), batch_y.tolist())
 
     def test_iter(self):
-        dataset = IndexedSequenceDataset(
+        dataset = IndexedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
         )
@@ -131,7 +131,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.token_dataset = MockTokenDataset(self.sample_data)
 
     def test_unconcatenated_unpadded_untrainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=False,
@@ -153,7 +153,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [5, 5, 2])
 
     def test_unconcatenated_unpadded_trainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=False,
@@ -179,7 +179,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [5, 5, 2])
 
     def test_unconcatenated_padded_untrainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=True,
@@ -213,7 +213,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [2, 0, 0])
 
     def test_unconcatenated_padded_trainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=False, pad_incomplete=True,
@@ -251,7 +251,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [2, 1, 0])
 
     def test_concatenated_unpadded_untrainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=False,
@@ -281,7 +281,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [5, 5, 5])
 
     def test_concatenated_unpadded_trainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=False,
@@ -315,7 +315,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [5, 2, 1])
 
     def test_concatenated_padded_untrainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -349,7 +349,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [5, 2, 0])
 
     def test_concatenated_padded_trainedsos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -387,7 +387,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(y.tolist(), [1, 0, 0])
 
     def test_mask_zero_sos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -407,7 +407,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_one_sos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -427,7 +427,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_one_sos_left(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -447,7 +447,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_one_sos_right(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -467,7 +467,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_two_sos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -487,7 +487,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_two_sos_left(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -507,7 +507,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_two_sos_right(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -527,7 +527,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_two_sos_middle(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -547,7 +547,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_two_sos_right(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
@@ -567,7 +567,7 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
         self.assertEqual(mask.tolist(), expected)
 
     def test_mask_three_sos(self):
-        dataset = MaterializedSequenceDataset(
+        dataset = MaterializedSequenceDataset.create(
             parent=self.token_dataset,  # noqa
             seq_len=3, step_size=2,
             concatenate=True, pad_incomplete=True,
