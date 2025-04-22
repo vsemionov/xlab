@@ -23,7 +23,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 from boltons.setutils import IndexedSet
 
 from .tokenizer import Tokenizer, TokenizerTrainer
-from .datasets import HubLocation, TextDataset, TokenDataset, SequenceDataset
+from .datasets import HubLocation, TextDataset, TokenDataset, SequenceDataset, IndexedSequenceDataset
 from .utils import download
 
 
@@ -40,6 +40,8 @@ class XLabDataModule(L.LightningDataModule):
             tokenizer_path: Path = Path('tokenizers/default.tok'),
             tokenizer_train_args: dict = TokenizerTrainer().train_args,
             dynamic_encode: bool = False,
+            dataset_class: type[SequenceDataset] = IndexedSequenceDataset,
+            concatenate: bool = False,
             pad_incomplete: bool = True,
             num_proc: int = 4,
             progress: str = 'tqdm',
@@ -57,6 +59,8 @@ class XLabDataModule(L.LightningDataModule):
         self.tokenizer_trainer = TokenizerTrainer(tokenizer_train_args)
         self.tokenizer: Optional[Tokenizer] = None
         self.dynamic_encode = dynamic_encode
+        self.dataset_class = dataset_class
+        self.concatenate = concatenate
         self.pad_incomplete = pad_incomplete
         self.num_proc = num_proc
         self.progress = progress
@@ -127,10 +131,10 @@ class XLabDataModule(L.LightningDataModule):
             for split, text_dataset in text_datasets.items()
         }
         sequence_datasets = {
-            split: SequenceDataset(
+            split: self.dataset_class(
                 parent=token_dataset,
                 seq_len=self.seq_len, step_size=self.step_size,
-                pad_incomplete=self.pad_incomplete,
+                concatenate=self.concatenate, pad_incomplete=self.pad_incomplete,
                 num_proc=self.num_proc,
             )
             for split, token_dataset in token_datasets.items()
