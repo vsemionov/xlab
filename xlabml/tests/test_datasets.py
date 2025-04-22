@@ -586,3 +586,35 @@ class TestMaterializedSequenceDataset(unittest.TestCase):
             [0, 0, 0, 0, 0, 1, 1],
         ]
         self.assertEqual(mask.tolist(), expected)
+
+    def test_batch_get(self):
+        dataset = MaterializedSequenceDataset.create(
+            parent=self.token_dataset,  # noqa
+            seq_len=3, step_size=2,
+        )
+
+        xys = [dataset[i] for i in range(len(dataset))]
+        batch_xys = dataset[list(range(len(dataset)))]
+        self.assertEqual(len(batch_xys), len(xys))
+
+        for batch_xy, xy in zip(batch_xys, xys):
+            x, y = xy
+            batch_x, batch_y = batch_xy
+            self.assertEqual(x.tolist(), batch_x.tolist())
+            self.assertEqual(y.tolist(), batch_y.tolist())
+
+    def test_iter(self):
+        dataset = MaterializedSequenceDataset.create(
+            parent=self.token_dataset,  # noqa
+            seq_len=3, step_size=2,
+        )
+
+        xys = [dataset[i] for i in range(len(dataset))]
+        iter_xys = list(dataset)
+        self.assertEqual(len(iter_xys), len(xys))
+
+        for iter_xy, xy in zip(iter_xys, xys):
+            x, y = xy
+            iter_x, iter_y = iter_xy
+            self.assertEqual(x.tolist(), iter_x.tolist())
+            self.assertEqual(y.tolist(), iter_y.tolist())
