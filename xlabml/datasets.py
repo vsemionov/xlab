@@ -322,7 +322,8 @@ class MaterializedSequenceDataset(SequenceDataset):
                 yield {column: buffer[:window]}
                 buffer = buffer[step_size:]
 
-        dataset = hf_datasets.Dataset.from_generator(generate, num_proc=num_proc, split=parent.parent.split)
+        # don't set num_proc > 1 as it causes a warning
+        dataset = hf_datasets.Dataset.from_generator(generate, split=parent.parent.split)
         return dataset.with_format('numpy')
 
     def _compute_mask(self, x: torch.Tensor):
