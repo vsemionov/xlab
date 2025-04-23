@@ -21,13 +21,13 @@ from typing import Any
 import multiprocessing
 
 import torch
-import torch.optim.lr_scheduler as lr_scheduler
 from lightning.pytorch.trainer import Trainer
 from lightning.pytorch.cli import LightningCLI
 
 from xlabml.callbacks import *  # noqa
 from xlabml.datamodules import XLabDataModule
 from xlabml.models import XLabModule, XLabModel
+from xlabml.sched import *
 from xlabml.stats import compute_stats
 from xlabml.utils import progress_bar
 from xlabml import CONF_DIR
@@ -92,22 +92,6 @@ class XLabTrainer(Trainer):
             f'{stats["dataset"]["text_size_est"] / stats["dataset"]["token_size_est"]:,.2f} characters'
         )
         print(f'Mean sequence fill ratio: {stats["dataset"]["seq_fill_ratio_mean"]:.2f}')
-
-
-class XLabLRScheduler(lr_scheduler.LRScheduler):
-    def __init__(self, *args, config: dict, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.config = config
-
-# Dynamically create subclasses of lr_scheduler.LRScheduler,  accepting Lightning's additional configuration,
-# and add them to the module namespace, so that they can be used in the configuration file.
-# This is a workaround for Lightning CLI's incomplete support for LR scheduler configuration.
-for var in vars(lr_scheduler).values():
-    if type(var) is type and issubclass(var, lr_scheduler.LRScheduler) and var is not lr_scheduler.LRScheduler:
-        name = f'XLab{var.__name__}'
-        cls = type(name, (XLabLRScheduler, var), {})
-        vars()[name] = cls
-        del cls, name
 
 
 class XLabCLI(LightningCLI):
