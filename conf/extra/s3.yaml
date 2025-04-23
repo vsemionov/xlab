@@ -5,3 +5,4 @@ trainer:
       init_args:
         ...:
         dirpath: s3://bucket/checkpoints
+        save_last: false
