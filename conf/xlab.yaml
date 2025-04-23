@@ -67,3 +67,12 @@ optimizer:
   init_args:
     lr: 3e-4
     weight_decay: 0.1
+
+lr_scheduler:
+  class_path: XLabCosineWarmupLR
+  init_args:
+    total_iters: !!float .inf
+    warmup_iters: 10_000
+    config:
+      interval: step
+      frequency: 1
