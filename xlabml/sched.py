@@ -28,6 +28,7 @@ class XLabLRScheduler(lr_scheduler.LRScheduler):
         self.config = config or {}
 
 
+# https://lightning.ai/docs/pytorch/stable/notebooks/course_UvA-DL/05-transformers-and-MH-attention.html
 class CosineWarmupLR(lr_scheduler.LRScheduler):
     def __init__(
             self,
