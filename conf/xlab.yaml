@@ -50,9 +50,9 @@ data:
     num_threads: 4
     max_sentence_length: 1073741824
   dynamic_encode: false
-  dataset_class: xlabml.datasets.MaterializedSequenceDataset
-  concatenate: true
-  pad_incomplete: false
+  dataset_class: xlabml.datasets.IndexedSequenceDataset
+  concatenate: false
+  pad_incomplete: true
   train_sos: false
   num_proc: 4
   progress: tqdm
