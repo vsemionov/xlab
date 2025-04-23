@@ -23,6 +23,7 @@ import multiprocessing
 import torch
 from lightning.pytorch.trainer import Trainer
 from lightning.pytorch.cli import LightningCLI
+from dotenv import load_dotenv
 
 from xlabml.callbacks import *  # noqa
 from xlabml.datamodules import XLabDataModule
@@ -146,6 +147,8 @@ class XLabCLI(LightningCLI):
 
 
 def main():
+    load_dotenv()
+
     torch.set_float32_matmul_precision('high')
     multiprocessing.set_start_method('fork')  # needed on macos
     delattr(XLabModule, 'configure_optimizers')  # prevents a warning that method will be overridden by configuration

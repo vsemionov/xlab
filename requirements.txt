@@ -6,8 +6,10 @@ jsonargparse[signatures]
 lightning
 numpy
 omegaconf
+python-dotenv
 requests
 rich
+s3fs
 sentencepiece
 tensorboard
 torch

@@ -1,0 +1,7 @@
+trainer:
+  callbacks:
+    - ...
+    - class_path: ModelCheckpoint
+      init_args:
+        ...:
+        dirpath: s3://bucket/checkpoints
