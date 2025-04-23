@@ -132,6 +132,9 @@ class XLabDataModule(L.LightningDataModule):
             )
             for split, text_dataset in text_datasets.items()
         }
+        if level == 'encode':
+            return token_datasets
+
         sequence_datasets = {
             split: self.dataset_class.create(
                 parent=token_dataset,

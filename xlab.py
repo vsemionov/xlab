@@ -34,6 +34,18 @@ from xlabml import CONF_DIR
 
 
 class XLabTrainer(Trainer):
+    def download_data(self, model, datamodule: XLabDataModule):
+        """Download source data"""
+        datamodule.create_datasets_and_tokenizer(level='text')
+
+    def encode_data(self, model, datamodule: XLabDataModule):
+        """Encode text data"""
+        datamodule.create_datasets_and_tokenizer(level='encode')
+
+    def prepare_data(self, model, datamodule: XLabDataModule):
+        """Prepare training data"""
+        datamodule.prepare_data()
+
     def validate_data(self, model, datamodule: XLabDataModule, output_path: Path = 'invalid.csv', dump: bool = False):
         """Validate training data"""
         text_dataset = datamodule.create_datasets_and_tokenizer(['train'], level='text')['train']
@@ -95,7 +107,14 @@ class XLabTrainer(Trainer):
 
 
 class XLabCLI(LightningCLI):
-    data_subcommands = {'compute_stats'}
+    data_subcommands = {
+        'download_data',
+        'encode_data',
+        'prepare_data',
+        'validate_data',
+        'train_tokenizer',
+        'compute_stats',
+    }
 
     def __init__(self, *args: Any, trainer_class: type[XLabTrainer] = XLabTrainer, **kwargs: Any):
         super().__init__(*args, trainer_class=trainer_class, **kwargs)
@@ -104,9 +123,7 @@ class XLabCLI(LightningCLI):
     def subcommands(cls):
         return {
             **super().subcommands(),
-            'validate_data': {'model', 'datamodule'},
-            'train_tokenizer': {'model', 'datamodule'},
-            'compute_stats': {'model', 'datamodule'},
+            **{subcommand: {'model', 'datamodule'} for subcommand in cls.data_subcommands},
         }
 
     def add_arguments_to_parser(self, parser):
