@@ -15,7 +15,7 @@ trainer:
     - class_path: ModelCheckpoint
       init_args:
         monitor: val_loss
-        save_last: true
+        save_last: link
         save_top_k: 10
         mode: min
   max_epochs: 20
