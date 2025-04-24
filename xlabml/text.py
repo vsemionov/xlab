@@ -24,7 +24,8 @@ def is_control(char):
 
 
 def escape(output: str) -> str:
+    allowed_control_chars = {'\t', '\n'}
     return ''.join(
-        char if not is_control(char) else rf'\u{ord(char):04x}'
+        char if not is_control(char) or char in allowed_control_chars else rf'\u{ord(char):04x}'
         for char in output
     )
