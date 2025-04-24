@@ -66,7 +66,7 @@ The training ran on a single A100 GPU, with batch size 256, for 3 epochs (144K s
 | Version | Checkpoint | Loss (test) | Accuracy (test) |
 |---------|------------|-------------|-----------------|
 | 0.1     | last       | 3.18        | 40.0%           |
-| 0.2     | last       | TBD         | TBD             |
+| 0.2     | last       | 2.79        | 47.0%           |
 
 
 ## Getting started
