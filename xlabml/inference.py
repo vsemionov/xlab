@@ -86,6 +86,47 @@ def sample(
 
 
 @torch.no_grad()
+def greedy_search(
+        model: nn.Module,
+        x: torch.Tensor,
+        output_length: int,
+        block_size: Optional[int],
+        eos_class: Optional[int] = None,
+        exclude_classes: Optional[list[int]] = None
+):
+    """
+    Greedy search for autoregressive models in PyTorch.
+    See `How to generate text <https://huggingface.co/blog/how-to-generate>`_.
+
+    Args:
+        model (Module): The model to predict output classes. It is expected to output unnormalized logits.
+        x (Tensor): Input class indices (1-d, int64).
+        output_length (int): The maximum number of predictions to generate.
+        block_size (int): The maximum sequence length that the model accepts. ``None`` denotes unlimited.
+        eos_class (int): Index of the end-of-sequence class. Not returned in output. ``None`` denotes unavailable.
+        exclude_classes (list[int]): Indices of classes to exclude from results (e.g. padding and unknown).
+
+    Returns:
+        Tensor of output class indices (1-d, int64).
+    """
+
+    model.eval()
+    seq = x
+
+    for _ in range(output_length):
+        inputs = seq[-block_size:].unsqueeze(0)
+        logits = model.forward(inputs).squeeze(0)[-1]
+        if exclude_classes:
+            logits[exclude_classes] = float('-inf')
+        index = logits.argmax()
+        if index == eos_class:
+            break
+        seq = torch.cat([seq, index.unsqueeze(0)])
+
+    return seq[x.size(-1):]
+
+
+@torch.no_grad()
 def beam_search(
         model: nn.Module,
         x: torch.Tensor,

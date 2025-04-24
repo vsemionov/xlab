@@ -9,6 +9,7 @@
 - Support combining multiple hub datasets
 - Download pre-trained tokenizer
 - Optional encoding on the fly
+- Added greedy search in inference
 - Support continued prompts in inference (not start of sequence)
 - Compute dataset and vocabulary statistics
 - Data validation

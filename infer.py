@@ -39,6 +39,7 @@ from xlabml import text
 @click.option('-k', '--top-k', type=click.IntRange(min=1))
 @click.option('-p', '--top-p', type=click.FloatRange(min=0, max=1, min_open=True))
 @click.option('-s', '--seed', type=int)
+@click.option('-g', '--greedy-search', is_flag=True)
 @click.option('-b', '--beam-search', is_flag=True)
 @click.option('-w', '--beam-width', type=click.IntRange(min=1), default=10)
 @click.option('-z', '--length-penalty', type=float, default=0)
@@ -46,10 +47,12 @@ from xlabml import text
 def main(
         checkpoint_path, prompt, tokenizer_path, continued, device,
         runs, limit, temperature, top_k, top_p, seed,
-        beam_search, beam_width, length_penalty,
+        greedy_search, beam_search, beam_width, length_penalty,
         debug
 ):
     """Model inference"""
+
+    assert [greedy_search, beam_search].count(True) <= 1
 
     if device == 'auto':
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -75,16 +78,21 @@ def main(
     generator = torch.Generator().manual_seed(seed) if seed is not None else None
 
     for _ in range(runs):
-        if not beam_search:
-            indices = inference.sample(
+        if greedy_search:
+            indices = inference.greedy_search(
                 model, inputs,
-                temperature=temperature, top_k=top_k, top_p=top_p, generator=generator,
                 output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
             )
-        else:
+        elif beam_search:
             indices = inference.beam_search(
                 model, inputs,
                 beam_width=beam_width, length_penalty=length_penalty,
+                output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
+            )
+        else:
+            indices = inference.sample(
+                model, inputs,
+                temperature=temperature, top_k=top_k, top_p=top_p, generator=generator,
                 output_length=limit, block_size=max_len, eos_class=eos_index, exclude_classes=None,
             )
 
