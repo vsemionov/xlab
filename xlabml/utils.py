@@ -83,7 +83,7 @@ def download(url: str, save_path: Union[Path, str], desc: Optional[str] = None):
     desc = desc or save_path.name
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
     with requests_retry_session(retries=3) as session, \
-            session.get(url, stream=True) as response:
+            session.get(url, timeout=30, stream=True) as response:
         response.raise_for_status()
         total = int(response.headers.get('content-length', 0))
         with open(save_path, 'wb') as file, \
